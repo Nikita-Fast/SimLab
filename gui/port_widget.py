@@ -49,11 +49,11 @@ class PortWidget(QGraphicsRectItem):
     #         return outputs.index(self)
     #     raise ValueError('порт не добавлен во входы или выходы модуля')
 
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: typing.Any) -> typing.Any:
-        if change == QGraphicsItem.ItemScenePositionHasChanged:
-            if self.is_connected:
-                self.connection.recalculate()
-        return super().itemChange(change, value)
+    # def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: typing.Any) -> typing.Any:
+    #     if change == QGraphicsItem.ItemScenePositionHasChanged:
+    #         if self.is_connected:
+    #             self.connection.recalculate()
+    #     return super().itemChange(change, value)
 
     def enable_highlight(self):
         self.setBrush(QBrush(QColor('green')))

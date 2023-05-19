@@ -2,7 +2,6 @@ import itertools
 from typing import Tuple, Dict
 
 from gui.port_connection_line import PortConnectionLine
-from gui.port_connection_path import Path
 from gui.port_widget import PortWidget
 from modules.general import mediator
 from qt import *
@@ -44,10 +43,6 @@ class GraphicsScene(QGraphicsScene):
                                                       other_port) == ConnectionStatus.VALID_LINE:
                                 connection = PortConnectionLine(self.selected_port, other_port)
                                 self.addItem(connection)
-
-                                self.addItem(Path(
-                                    self.selected_port, other_port
-                                ))
 
                             if self.connection_status(self.selected_port,
                                                       other_port) == ConnectionStatus.VALID_LOOP:

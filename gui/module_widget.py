@@ -128,6 +128,7 @@ class ModuleWidget(QGraphicsItem):
         else:
             self.out_of_top_layer()
         painter.drawRect(self.body_rect)
+        # painter.drawRect(self.bounding_rect)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Delete:
@@ -289,10 +290,10 @@ class ModuleWidget(QGraphicsItem):
             )
             self.recalculate_label(label, output_port)
 
-    def recalculate_connections(self):
-        for port, _ in self.inputs + self.outputs:
-            if port.is_connected:
-                port.connection.recalculate()
+    # def recalculate_connections(self):
+    #     for port, _ in self.inputs + self.outputs:
+    #         if port.is_connected:
+    #             port.connection.recalculate()
 
     def recalculate_rects(self):
         h = self.bounding_rect.height() * 0.8
@@ -304,7 +305,7 @@ class ModuleWidget(QGraphicsItem):
 
         self.recalculate_ports()
 
-        self.recalculate_connections()
+        # self.recalculate_connections()
 
         center = self.bounding_rect.center()
         h = self.bounding_rect.height() * 0.9
