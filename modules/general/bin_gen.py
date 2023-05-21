@@ -10,14 +10,9 @@ name = "Binary Generator"
 language = "Python"
 
 module_type = 'function'
-# module_class = None
 entry_point = gen_binary_data
 
-# input_ports = [
-#
-# ]
-
-bits_num = 25
+bits_num = 20
 
 output_ports = [
     {

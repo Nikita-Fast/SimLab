@@ -38,16 +38,16 @@ class PortWidget(QGraphicsRectItem):
     def is_selected(self, value):
         self._is_selected = value
 
-    # def get_descriptor_based_serial_number(self):
-    #     # Получить номер этого порта в соответствии с дескриптором модуля
-    #
-    #     inputs = [port for port, _ in self.parentItem().inputs]
-    #     if self in inputs:
-    #         return inputs.index(self)
-    #     outputs = [port for port, _ in self.parentItem().outputs]
-    #     if self in outputs:
-    #         return outputs.index(self)
-    #     raise ValueError('порт не добавлен во входы или выходы модуля')
+    def get_descriptor_based_serial_number(self):
+        # Получить номер этого порта в соответствии с дескриптором модуля
+
+        inputs = [port for port, _ in self.parentItem().inputs]
+        if self in inputs:
+            return inputs.index(self)
+        outputs = [port for port, _ in self.parentItem().outputs]
+        if self in outputs:
+            return outputs.index(self)
+        raise ValueError('порт не добавлен во входы или выходы модуля')
 
     # def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: typing.Any) -> typing.Any:
     #     if change == QGraphicsItem.ItemScenePositionHasChanged:

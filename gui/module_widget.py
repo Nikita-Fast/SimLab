@@ -62,6 +62,17 @@ class ModuleWidget(QGraphicsItem):
     def outputs(self, value):
         self._outputs = value
 
+    def get_port_by_serial_number(self, port_type: str, number: int):
+        if port_type == 'input':
+            inputs = [port for port, _ in self.inputs]
+            if number < len(inputs):
+                return inputs[number]
+        if port_type == 'output':
+            outputs = [port for port, _ in self.outputs]
+            if number < len(outputs):
+                return outputs[number]
+        raise ValueError(f'Модуль {self.module.name} не имеет порта типа {port_type} с номером {number}')
+
     def delete(self):
         # удалить все входящие и исходящие соединения
         for port, _ in self.inputs + self.outputs:

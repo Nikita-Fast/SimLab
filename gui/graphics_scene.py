@@ -1,4 +1,7 @@
+import importlib
 import itertools
+import os
+import sys
 from typing import Tuple, Dict
 
 from gui.port_connection_line import PortConnectionLine
@@ -8,6 +11,7 @@ from qt import *
 from gui.module_widget import ModuleWidget
 from gui.port_connection_status import ConnectionStatus
 import networkx as nx
+import json
 
 
 class GraphicsScene(QGraphicsScene):
@@ -125,3 +129,66 @@ class GraphicsScene(QGraphicsScene):
         nx.drawing.nx_pydot.write_dot(connection_graph, 'code_gen/connection_graph.dot')
 
         return {'graph': connection_graph, 'module_to_vertex': module_to_vertex}
+
+    def save_model_to_json(self):
+        modules = [item for item in self.items() if isinstance(item, ModuleWidget)]
+        module_to_number = {m: i for i, m in enumerate(modules)}
+
+        connections = [item for item in self.items() if isinstance(item, PortConnectionLine)]
+        with open('saved_model.json', 'w') as file:
+            model = {}
+            model['modules'] = {}
+            for m, i in module_to_number.items():
+                m: ModuleWidget
+                f = m.module.__file__
+                module_dir = os.path.dirname(f)
+                import_name = os.path.splitext(f)[0].split('/')[-1]
+                import_path = module_dir[module_dir.find('modules'):].replace('/', '.')
+
+                d = {}
+                d['module_number'] = i
+                d['descriptor_file'] = import_path, import_name
+                d['scene_pos'] = m.scenePos().x(), m.scenePos().y()
+                d['bounding_rect_size'] = m.bounding_rect.size().width(), m.bounding_rect.size().height()
+                model['modules'][i] = d
+
+            model['connections'] = []
+            for c in connections:
+                src_port = c.source_port
+                dst_port = c.dst_port
+                src_port_number = src_port.get_descriptor_based_serial_number()
+                dst_port_number = dst_port.get_descriptor_based_serial_number()
+                src_module_number = module_to_number[src_port.parentItem()]
+                dst_module_number = module_to_number[dst_port.parentItem()]
+                model['connections'].append((src_module_number, src_port_number, dst_module_number, dst_port_number))
+
+            json.dump(model, file)
+
+    def load_model_from_json(self):
+        with open('saved_model.json', 'r') as file:
+            number_to_module = {}
+            model = json.load(file)
+            for dct in model['modules'].values():
+                module_number = dct['module_number']
+                path, name = dct['descriptor_file']
+                descriptor = importlib.import_module(f'.{name}', path)
+                module_widget = ModuleWidget(descriptor)
+
+                self.add_module_widget(module_widget)
+
+                w, h = dct['bounding_rect_size']
+                module_widget.bounding_rect.setSize(QSizeF(w, h))
+                x, y = dct['scene_pos']
+                module_widget.setPos(x, y)
+                module_widget.recalculate_rects()
+
+                number_to_module[module_number] = module_widget
+
+            for c in model['connections']:
+                src_module_num, src_port_num, dst_module_num, dst_port_num = c
+
+                src_port = number_to_module[src_module_num].get_port_by_serial_number('output', src_port_num)
+                dst_port = number_to_module[dst_module_num].get_port_by_serial_number('input', dst_port_num)
+
+                connection = PortConnectionLine(src_port, dst_port)
+                self.addItem(connection)

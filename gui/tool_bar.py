@@ -6,14 +6,16 @@ from qt import *
 class ButtonNames(enum.Enum):
     MODEL_GRAPH = 'Model Graph'
     GENERATE = 'Generate Code and Run'
-    # RUN = 'Run'
+    SAVE_MODEL = 'Save Model'
+    LOAD_MODEL = 'Load Model'
 
 
 class ToolBar(QToolBar):
     # Идея: завести свой сигнал для каждой кнопки
     model_graph_btn_clicked = Signal()
     generate_code_btn_clicked = Signal()
-    # run_btn_clicked = Signal()
+    save_model_btn_clicked = Signal()
+    load_model_btn_clicked = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -32,9 +34,11 @@ class ToolBar(QToolBar):
         if action.text() == ButtonNames.GENERATE.value:
             print('<Generate Code> handler')
             self.generate_code_btn_clicked.emit()
-        # if action.text() == ButtonNames.RUN.value:
-        #     print('<Run> handler')
-        #     self.run_btn_clicked.emit()
+        if action.text() == ButtonNames.SAVE_MODEL.value:
+            self.save_model_btn_clicked.emit()
+        if action.text() == ButtonNames.LOAD_MODEL.value:
+            self.load_model_btn_clicked.emit()
+
 
 
 

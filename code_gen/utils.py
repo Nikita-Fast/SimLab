@@ -3,6 +3,15 @@ from typing import Dict, List
 import networkx as nx
 
 
+def get_default_args(func):
+    signature = inspect.signature(func)
+    return {
+        k: v.default
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
+
+
 class ModuleWrapper:
     def __init__(self, descriptor, module_obj, id: str):
         # module_obj это объект модуль создаваемый в генерируемом коде т.е. например module0_AWGNChannel
@@ -15,10 +24,10 @@ class ModuleWrapper:
         self._id = id
 
     def execute(self):
-        for i, _ in enumerate(self._exec_res):
+        for output_port_number in range(len(self._exec_res)):
             # Выбираем функцию-вычислитель. Если в дескрипторе явно не указана функцию-вычислитель,
             # то по умолчанию используется descriptor.entry_point
-            f = self.descriptor.output_ports[i].get('f', self._f)
+            f = self.descriptor.output_ports[output_port_number].get('f', self._f)
 
             # выбираем входные порты, с которых возьмем параметры для вызова функции-вычислителя
             # если номера портов не указаны в дескрипторе явно, то берем первые k портов,
@@ -29,7 +38,7 @@ class ModuleWrapper:
             assert ('self' not in f_param_name_to_value)
 
             first_k_inputs = [i for i, _ in enumerate(f_param_name_to_value)]
-            inputs: List[int] = self.descriptor.output_ports[i].get('inputs', first_k_inputs)
+            inputs: List[int] = self.descriptor.output_ports[output_port_number].get('inputs', first_k_inputs)
 
             # берем значения параметров из буфера
             for i, p_name in enumerate(f_param_name_to_value):
@@ -42,10 +51,18 @@ class ModuleWrapper:
                 if p_value is None:
                     f_param_name_to_value[p_name] = self.descriptor.__dict__.get(p_name, None)
 
-            # кидаем исключение, если какие-то параметры не получили значение
+            # для параметров не получивших значение, смотрим указано ли значение по умолчанию
+            default_args = get_default_args(f)
+            for p_name in f_param_name_to_value:
+                if f_param_name_to_value[p_name] is None:
+                    p_value = default_args.get(p_name, None)
+                    if p_value:
+                        f_param_name_to_value[p_name] = p_value
+
             for p_name, p_value in f_param_name_to_value.items():
-                if p_value is None:
-                    raise Exception(f'значение параметра {p_name} не было найдено ни в буфере, ни в дескрипторе')
+                if p_name not in default_args and p_value is None:
+                    raise Exception(f'для параметра {p_name}, не имеющего значения по умолчанию, '
+                                    f'значение не передано через GUI и не указано в дескрипторе')
 
             # извлекаем значения параметров
             params = [*f_param_name_to_value.values()]
@@ -55,7 +72,7 @@ class ModuleWrapper:
                 params.insert(0, self._module_obj)
 
             # выполняем вычисления
-            self._exec_res[i] = f(*params)
+            self._exec_res[output_port_number] = f(*params)
 
     def _send(self, src_port_num: int, dst_module: 'ModuleWrapper', dst_port_num: int):
         dst_module._buffer[dst_port_num] = self._exec_res[src_port_num]

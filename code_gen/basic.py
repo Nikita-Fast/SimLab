@@ -105,7 +105,8 @@ class BasicGenerator:
             modules_root = 'modules'
             _, modules_root, after = module_dir_path.partition(modules_root)
             import_path = (modules_root + after).replace('/', '.')
-            line = f'from {import_path} import {d.__name__}'
+            import_name = os.path.splitext(d.__file__)[0].split('/')[-1]
+            line = f'from {import_path} import {import_name}'
             lines.append(line)
         return lines
 
@@ -123,9 +124,10 @@ class BasicGenerator:
             module_id = module_to_vertex[module]
             obj_name = self.gen_module_name(module, module_id)
 
+            descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]
             obj_creation = ''
             if module_type == 'function':
-                f_name = f'{descriptor.__name__}.{descriptor.entry_point.__name__}'
+                f_name = f'{descriptor_name}.{descriptor.entry_point.__name__}'
                 obj_creation = f'{obj_name} = {f_name}'
             if module_type == 'class':
                 module_class = getattr(descriptor, 'module_class')
@@ -135,15 +137,25 @@ class BasicGenerator:
 
             lines.append(obj_creation)
             lines.append(f'id_to_module[\'{module_id}\'] = {obj_name}')
-            lines.append(f'id_to_descriptor[\'{module_id}\'] = {descriptor.__name__}')
+            lines.append(f'id_to_descriptor[\'{module_id}\'] = {descriptor_name}')
 
         return lines
+
+    def get_default_args(self, func):
+        signature = inspect.signature(func)
+        return {
+            k: v.default
+            for k, v in signature.parameters.items()
+            if v.default is not inspect.Parameter.empty
+        }
 
     # истчоники параметров:
     # 1) GUI
     # 2) дескриптор
     def fetch_method_params(self, method_name: str, module_class: type, descriptor, params_from_gui: Dict[str, Any]):
-        param_names = inspect.getfullargspec(module_class.__dict__[method_name]).args
+        method = module_class.__dict__[method_name]
+        param_names = inspect.getfullargspec(method).args
+
         # у метода класса параметр self заполняется автоматически
         if 'self' in param_names:
             param_names.remove('self')
@@ -163,16 +175,27 @@ class BasicGenerator:
                 if p_value:
                     param_to_value[p_name] = p_value
 
+        # для параметров не получивших значение, смотрим указано ли значение по умолчанию
+        default_args = self.get_default_args(method)
+        for p_name in param_names:
+            if param_to_value[p_name] is None:
+                p_value = default_args.get(p_name, None)
+                if p_value:
+                    param_to_value[p_name] = p_value
+
         for p_name, p_value in param_to_value.items():
-            if p_value is None:
-                raise Exception(f'для параметра {p_name} значение не передано через GUI и не указано в дескрипторе')
+            if p_name not in default_args and p_value is None:
+                raise Exception(f'для параметра {p_name}, не имеющего значения по умолчанию, '
+                                f'значение не передано через GUI и не указано в дескрипторе')
 
         return param_to_value
 
     def gen_module_constructor_invocation(self, descriptor, module_class: type, params_from_gui: Dict[str, Any]):
         param_to_value = self.fetch_method_params('__init__', module_class, descriptor, params_from_gui)
+        print(param_to_value)
         s_params = self.method_params_to_str(param_to_value)
-        return f'{descriptor.__name__}.{module_class.__name__}({s_params})'
+        descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]
+        return f'{descriptor_name}.{module_class.__name__}({s_params})'
 
     def gen_module_name(self, module: ModuleWidget, module_id: str):
         descriptor = module.module
@@ -182,5 +205,8 @@ class BasicGenerator:
     def method_params_to_str(self, params: Dict[str, Any]) -> str:
         s = []
         for name, value in params.items():
-            s.append(f'{name}={value}')
+            if isinstance(value, str):
+                s.append(f'{name}=\'{value}\'')
+            else:
+                s.append(f'{name}={value}')
         return ', '.join(s)

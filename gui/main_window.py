@@ -31,6 +31,8 @@ class MainWindow(QMainWindow):
         self.modules_dock_widget.widget().module_double_clicked.connect(self.centralWidget().scene().add_module_widget)
         self.tool_bar.generate_code_btn_clicked.connect(self.helper)
         self.tool_bar.model_graph_btn_clicked.connect(self.centralWidget().scene().create_connection_graph)
+        self.tool_bar.save_model_btn_clicked.connect(self.centralWidget().scene().save_model_to_json)
+        self.tool_bar.load_model_btn_clicked.connect(self.centralWidget().scene().load_model_from_json)
 
         self.show()
 
