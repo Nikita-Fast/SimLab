@@ -12,7 +12,7 @@ entry_point = AWGNChannel.process
 
 input_ports = [
     {
-        "label": "Input"
+        "label": "Символы"
     },
 ]
 

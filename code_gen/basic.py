@@ -113,8 +113,7 @@ class BasicGenerator:
     def gen_module_init(
             self,
             module: ModuleWidget,
-            module_to_vertex: Dict[ModuleWidget, str],
-            params_from_gui={'init_params': {}}
+            module_to_vertex: Dict[ModuleWidget, str]
     ) -> List[str]:
         descriptor = module.module
         lines = []
@@ -126,13 +125,18 @@ class BasicGenerator:
 
             descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]
             obj_creation = ''
+
+            # достаем параметры из gui и сохраняем их в дескрипторе
+            if module_gui := module.module.__dict__.get('gui', None):
+                params_from_gui = module_gui.get_param_values()
+                self.save_params_from_gui_to_descriptor(params_from_gui, descriptor)
+
             if module_type == 'function':
                 f_name = f'{descriptor_name}.{descriptor.entry_point.__name__}'
                 obj_creation = f'{obj_name} = {f_name}'
             if module_type == 'class':
                 module_class = getattr(descriptor, 'module_class')
-                constructor_invocation = \
-                    self.gen_module_constructor_invocation(descriptor, module_class, params_from_gui['init_params'])
+                constructor_invocation = self.gen_module_constructor_invocation(descriptor, module_class)
                 obj_creation = f'{obj_name} = {constructor_invocation}'
 
             lines.append(obj_creation)
@@ -149,10 +153,13 @@ class BasicGenerator:
             if v.default is not inspect.Parameter.empty
         }
 
-    # истчоники параметров:
-    # 1) GUI
-    # 2) дескриптор
-    def fetch_method_params(self, method_name: str, module_class: type, descriptor, params_from_gui: Dict[str, Any]):
+    def save_params_from_gui_to_descriptor(self, params_from_gui: Dict[str, Any], descriptor):
+        for param_name, dct in params_from_gui.items():
+            # Если значение параметры было выставлено на GUI, то пишем этот параметр в дескриптор
+            if dct['param_is_set']:
+                descriptor.__dict__[param_name] = dct['param_value']
+
+    def fetch_method_params(self, method_name: str, module_class: type, descriptor):
         method = module_class.__dict__[method_name]
         param_names = inspect.getfullargspec(method).args
 
@@ -162,18 +169,12 @@ class BasicGenerator:
 
         param_to_value = {p_name: None for p_name in param_names}
 
-        for p in params_from_gui:
-            if p not in param_to_value.keys():
-                raise Exception('через GUI передан параметр с именем отсутствующим среди имен параметров метода')
-            else:
-                param_to_value[p] = params_from_gui[p]
-
         for p_name in param_names:
-            # значение параметра полученное от GUI приоритетнее чем значение параметра указанное в дескрипторе
-            if param_to_value[p_name] is None:
-                p_value = descriptor.__dict__.get(p_name, None)
-                if p_value:
-                    param_to_value[p_name] = p_value
+            # Значение параметра полученное от GUI приоритетнее чем значение параметра указанное в дескрипторе
+            # т.к. оно переписывает значение параметра, ранее указанное в дескрипторе
+            p_value = descriptor.__dict__.get(p_name, None)
+            if p_value:
+                param_to_value[p_name] = p_value
 
         # для параметров не получивших значение, смотрим указано ли значение по умолчанию
         default_args = self.get_default_args(method)
@@ -190,8 +191,8 @@ class BasicGenerator:
 
         return param_to_value
 
-    def gen_module_constructor_invocation(self, descriptor, module_class: type, params_from_gui: Dict[str, Any]):
-        param_to_value = self.fetch_method_params('__init__', module_class, descriptor, params_from_gui)
+    def gen_module_constructor_invocation(self, descriptor, module_class: type):
+        param_to_value = self.fetch_method_params('__init__', module_class, descriptor)
         print(param_to_value)
         s_params = self.method_params_to_str(param_to_value)
         descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]

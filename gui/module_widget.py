@@ -149,6 +149,10 @@ class ModuleWidget(QGraphicsItem):
         # print(f'module mouse press')
         if event.button() == Qt.LeftButton:
             self.selected_corner = self.corner_rect_at(event.pos())
+        if event.button() == Qt.RightButton:
+            module_gui = self.module.__dict__.get('gui')
+            if module_gui:
+                module_gui.show()
         super(ModuleWidget, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
