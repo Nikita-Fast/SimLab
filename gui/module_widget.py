@@ -45,6 +45,30 @@ class ModuleWidget(QGraphicsItem):
         )
         self.add_ports()
         self.recalculate_rects()
+        self.setup_options_menu()
+
+    def setup_options_menu(self):
+        self.options_menu = QMenu()
+        self.delete_action = QAction('Delete')
+        self.delete_action.setIcon(QIcon(QPixmap('./resources/images/delete.png')))
+        self.properties_action = QAction('Properties')
+        self.properties_action.setIcon(QIcon(QPixmap('./resources/images/properties.png')))
+
+        self.options_menu.addAction(self.delete_action)
+        self.options_menu.addSeparator()
+        self.options_menu.addAction(self.properties_action)
+
+        # todo как используя QSizePolicy не хардкодить размер виджета?
+        self.options_menu.setMaximumSize(130, 53)
+        self.options_menu.triggered.connect(self.option_menu_triggered)
+
+    def option_menu_triggered(self, action):
+        if action == self.properties_action:
+            module_gui = self.module.__dict__.get('gui')
+            if module_gui:
+                module_gui.show()
+        if action == self.delete_action:
+            self.delete()
 
     @property
     def inputs(self):
@@ -150,9 +174,9 @@ class ModuleWidget(QGraphicsItem):
         if event.button() == Qt.LeftButton:
             self.selected_corner = self.corner_rect_at(event.pos())
         if event.button() == Qt.RightButton:
-            module_gui = self.module.__dict__.get('gui')
-            if module_gui:
-                module_gui.show()
+            size = self.options_menu.size()
+            self.options_menu.setGeometry(event.screenPos().x(), event.screenPos().y(), size.width(), size.height())
+            self.options_menu.show()
         super(ModuleWidget, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
