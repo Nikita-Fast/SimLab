@@ -2,7 +2,7 @@ import importlib
 import itertools
 import os
 import sys
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 from gui.port_connection_line import PortConnectionLine
 from gui.port_widget import PortWidget
@@ -97,7 +97,11 @@ class GraphicsScene(QGraphicsScene):
         else:
             return ConnectionStatus.VALID_LINE
 
-    def create_connection_graph(self) -> Dict:
+    def prepare_flow_graph(self) -> Tuple[List[ModuleWidget], Dict]:
+        # Даёт каждому module_widget на сцене свой уникальный id от 0 до n-1, где n - число виджетов
+        # сохраняем виджеты в список в порядке роста id.
+        # В виде словаря сохраняет информацию об исходящих соединениях каждого module_widget
+
         def get_port_number(port: PortWidget):
             module: ModuleWidget = port.parentItem()
             for i, (p_out, p_in) in enumerate(itertools.zip_longest(module.outputs, module.inputs)):
@@ -106,29 +110,68 @@ class GraphicsScene(QGraphicsScene):
                 if p_in and port == p_in[0]:
                     return i
 
-        connection_graph = nx.MultiDiGraph()
+        module_widgets = [item for item in self.items() if isinstance(item, ModuleWidget)]
 
-        module_widgets = [i for i in self.items() if isinstance(i, ModuleWidget)]
-
-        module_to_vertex = {m: str(i) for i, m in enumerate(module_widgets)}
-        connection_graph.add_nodes_from(list(module_to_vertex.values()))
-
-        for m in module_widgets:
-            for output, _ in m.outputs:
+        connections = {}
+        for module_id, module in enumerate(module_widgets):
+            block_outgoing_connections_info = []
+            for output_port_id, (output, _) in enumerate(module.outputs):
                 output: PortWidget
+
+                connection_info = {
+                    "src_output_port_id": output_port_id,
+                    "is_connected": False,
+                    "dst_module_id": None,
+                    "dst_input_port_id": None
+                }
+
                 if output.is_connected:
+                    connection_info['is_connected'] = True
                     connection: PortConnectionLine = output.connection
-
-                    src_port_num = get_port_number(connection.source_port)
-                    dst_port_num = get_port_number(connection.dst_port)
+                    connection_info['dst_input_port_id'] = get_port_number(connection.dst_port)
                     dst_module = connection.dst_port.parentItem()
-                    u = module_to_vertex[m]
-                    v = module_to_vertex[dst_module]
-                    connection_graph.add_edge(u, v, output_num=src_port_num, input_num=dst_port_num)
+                    connection_info['dst_module_id'] = module_widgets.index(dst_module)
 
-        nx.drawing.nx_pydot.write_dot(connection_graph, 'code_gen/connection_graph.dot')
+                block_outgoing_connections_info.append(connection_info)
+            connections[module_id] = block_outgoing_connections_info
 
-        return {'graph': connection_graph, 'module_to_vertex': module_to_vertex}
+        with open('./code_gen/connections.json', 'w') as file:
+            json.dump(connections, file)
+
+        return module_widgets, connections
+
+    # def create_connection_graph(self) -> Dict:
+    #     def get_port_number(port: PortWidget):
+    #         module: ModuleWidget = port.parentItem()
+    #         for i, (p_out, p_in) in enumerate(itertools.zip_longest(module.outputs, module.inputs)):
+    #             if p_out and port == p_out[0]:
+    #                 return i
+    #             if p_in and port == p_in[0]:
+    #                 return i
+    #
+    #     connection_graph = nx.MultiDiGraph()
+    #
+    #     module_widgets = [i for i in self.items() if isinstance(i, ModuleWidget)]
+    #
+    #     module_to_vertex = {m: str(i) for i, m in enumerate(module_widgets)}
+    #     connection_graph.add_nodes_from(list(module_to_vertex.values()))
+    #
+    #     for m in module_widgets:
+    #         for output, _ in m.outputs:
+    #             output: PortWidget
+    #             if output.is_connected:
+    #                 connection: PortConnectionLine = output.connection
+    #
+    #                 src_port_num = get_port_number(connection.source_port)
+    #                 dst_port_num = get_port_number(connection.dst_port)
+    #                 dst_module = connection.dst_port.parentItem()
+    #                 u = module_to_vertex[m]
+    #                 v = module_to_vertex[dst_module]
+    #                 connection_graph.add_edge(u, v, output_num=src_port_num, input_num=dst_port_num)
+    #
+    #     nx.drawing.nx_pydot.write_dot(connection_graph, 'code_gen/connection_graph.dot')
+    #
+    #     return {'graph': connection_graph, 'module_to_vertex': module_to_vertex}
 
     def save_model_to_json(self):
         modules = [item for item in self.items() if isinstance(item, ModuleWidget)]

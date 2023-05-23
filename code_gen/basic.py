@@ -6,28 +6,21 @@ from typing import Dict, Any, List
 from gui.module_widget import ModuleWidget
 
 
-def run_test_code_generation2(module_widget_to_vertex):
+def run_test_code_generation2(module_widgets):
     g = BasicGenerator()
-    g.process_model(module_widget_to_vertex)
+    g.process_model(module_widgets)
 
 
 class BasicGenerator:
     OUTPUT_FILE_NAME = 'code_gen/generated.py'
 
-    def process_model(self, module_to_vertex: Dict[ModuleWidget, str]):
-
+    def process_model(self, module_widgets: List[ModuleWidget]):
         code_lines = ['']
-        modules: List[ModuleWidget] = [m for m in module_to_vertex.keys()]
+        modules = module_widgets
         # import
-        code_lines.append(f'from code_gen.utils import ModuleWrapper')
+        code_lines.append(f'from code_gen.utils import ModuleWrapper, FlowGraph')
         code_lines.append(f'import networkx as nx')
         code_lines += self.gen_descriptors_import([m.module for m in modules])
-
-        # load connection_graph
-        code_lines.append('')
-        connection_graph_name = 'connection_graph'
-        path = 'code_gen/connection_graph.dot'
-        code_lines.append(f'{connection_graph_name} = nx.drawing.nx_pydot.read_dot(\'{path}\')')
 
         # create dicts
         code_lines.append(f'id_to_module = dict()')
@@ -35,18 +28,14 @@ class BasicGenerator:
 
         # init modules
         code_lines.append('')
-        for m in modules:
-            code_lines += self.gen_module_init(m, module_to_vertex)
+        for module_id, m in enumerate(modules):
+            code_lines += self.gen_module_init(m, module_id)
 
         # utils.ModuleWrapper
         code_lines += self.gen_module_wrapper_creation()
-        code_lines += self.gen_source_modules_selection(connection_graph_name)
 
-        # обход графа модели
-        code_lines += self.gen_traversal_and_execution()
-
-        # исследуем содержимое буфером модулей-стоков
-        code_lines += self.gen_sink_modules_results_inspecting(connection_graph_name)
+        # создать и запустить flow_graph
+        code_lines += self.gen_flow_graph_creation()
 
         code_lines += ['', f'print(\'EXECUTED\')']
 
@@ -58,44 +47,20 @@ class BasicGenerator:
         sys.modules.pop(gen.__name__)
         del gen
 
-    def gen_sink_modules_results_inspecting(self, connection_graph_name: str):
-        return [
-            '',
-            f'sink_module_wrappers = [m for m in module_wrapper_to_id if m.is_sink({connection_graph_name})]',
-            'for m in sink_module_wrappers:',
-            '\tprint(f\'module_id={m.get_id}, res={m.get_execution_results}\')'
-        ]
-
-    def gen_traversal_and_execution(self):
-        return [
-            '',
-            'work_list = [*sources]',
-            'while work_list:',
-            '\tmodule_wrapper = work_list[0]',
-            '\tmodule_wrapper.execute()',
-            '\tmodule_wrapper.send_to_successors(connection_graph, module_wrapper_to_id)',
-            '\twork_list += module_wrapper.successors(connection_graph, id_to_module_wrapper)',
-            '\tdel(work_list[0])'
-        ]
-
     def gen_module_wrapper_creation(self):
         return [
             '',
-            'id_to_module_wrapper = dict()',
-            'module_wrapper_to_id = dict()',
+            'module_wrappers = []',
             'for id, module in id_to_module.items():',
             '\tm = ModuleWrapper(id_to_descriptor[id], module, id)',
-            '\tid_to_module_wrapper[id] = m',
-            '\tmodule_wrapper_to_id[m] = id'
+            '\tmodule_wrappers.append(m)',
         ]
 
-    def gen_source_modules_selection(self, connection_graph_name: str):
+    def gen_flow_graph_creation(self):
         return [
             '',
-            'sources = []',
-            'for module_wrapper in id_to_module_wrapper.values():',
-            f'\tif module_wrapper.is_source({connection_graph_name}):',
-            '\t\tsources.append(module_wrapper)'
+            'flow_graph = FlowGraph(modules=module_wrappers)',
+            'flow_graph.run()',
         ]
 
     def gen_descriptors_import(self, descriptors):
@@ -113,14 +78,13 @@ class BasicGenerator:
     def gen_module_init(
             self,
             module: ModuleWidget,
-            module_to_vertex: Dict[ModuleWidget, str]
+            module_id: int
     ) -> List[str]:
         descriptor = module.module
         lines = []
         module_type = getattr(descriptor, 'module_type', None)
 
         if module_type:
-            module_id = module_to_vertex[module]
             obj_name = self.gen_module_name(module, module_id)
 
             descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]
@@ -140,8 +104,8 @@ class BasicGenerator:
                 obj_creation = f'{obj_name} = {constructor_invocation}'
 
             lines.append(obj_creation)
-            lines.append(f'id_to_module[\'{module_id}\'] = {obj_name}')
-            lines.append(f'id_to_descriptor[\'{module_id}\'] = {descriptor_name}')
+            lines.append(f'id_to_module[{module_id}] = {obj_name}')
+            lines.append(f'id_to_descriptor[{module_id}] = {descriptor_name}')
 
         return lines
 
@@ -198,7 +162,7 @@ class BasicGenerator:
         descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]
         return f'{descriptor_name}.{module_class.__name__}({s_params})'
 
-    def gen_module_name(self, module: ModuleWidget, module_id: str):
+    def gen_module_name(self, module: ModuleWidget, module_id: int):
         descriptor = module.module
         name = descriptor.name.replace(' ', '')
         return f'module_{module_id}_{name}'

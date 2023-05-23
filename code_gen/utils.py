@@ -1,4 +1,5 @@
 import inspect
+import json
 from typing import Dict, List
 import networkx as nx
 
@@ -13,7 +14,7 @@ def get_default_args(func):
 
 
 class ModuleWrapper:
-    def __init__(self, descriptor, module_obj, id: str):
+    def __init__(self, descriptor, module_obj, id: int):
         # module_obj это объект модуль создаваемый в генерируемом коде т.е. например module0_AWGNChannel
         self.descriptor = descriptor
         self._f = descriptor.entry_point
@@ -22,6 +23,22 @@ class ModuleWrapper:
         self._exec_res = [None] * len(getattr(self.descriptor, 'output_ports', []))
         # имя вершины в connection_graph, которой соответствует этот модуль
         self._id = id
+
+    def put(self, input_port_id: int, data):
+        # положить данные на указанный вход
+        self._buffer[input_port_id] = data
+
+    def get(self, output_port_id: int):
+        # получить значение с указанного выхода
+        return self._exec_res[output_port_id]
+
+    @property
+    def get_execution_results(self):
+        return self._exec_res
+
+    @property
+    def get_id(self):
+        return self._id
 
     def execute(self):
         for output_port_number in range(len(self._exec_res)):
@@ -74,55 +91,75 @@ class ModuleWrapper:
             # выполняем вычисления
             self._exec_res[output_port_number] = f(*params)
 
-    def _send(self, src_port_num: int, dst_module: 'ModuleWrapper', dst_port_num: int):
-        dst_module._buffer[dst_port_num] = self._exec_res[src_port_num]
 
-    def send_to_successors(
-            self,
-            connection_graph: nx.MultiDiGraph,
-            module_wrapper_to_vertex: Dict['ModuleWrapper', str]
-    ):
-        vertex_to_module_wrapper: Dict[str, 'ModuleWrapper'] = {v: m for m, v in module_wrapper_to_vertex.items()}
-        src_vertex = self._id
-        # в прочитанном графе вершины будет не int, а str(int)
-        for dst_vertex in connection_graph.successors(src_vertex):
-            dst_vertex: str
-            for u, v, data in connection_graph.edges(data=True):
-                if u == src_vertex and v == dst_vertex:
-                    dst_module_wrapper = vertex_to_module_wrapper[dst_vertex]
-                    input_port_num = int(data['input_num'])
-                    output_port_num = int(data['output_num'])
-                    self._send(input_port_num, dst_module_wrapper, output_port_num)
+class FlowGraph:
+    # flowgraph это граф, вершины которого это реальные модули (а не виджеты)
+    # цель flowgraph-а это управление потоком данных в моделе и контроль порядка работы модулей
+    def __init__(self, modules: List[ModuleWrapper], *args, **kwargs):
+        self.modules = modules
+        self.connections = self.load_port_connections_info()
 
-    def successors(
-            self,
-            connection_graph: nx.MultiDiGraph,
-            vertex_to_module_wrapper: Dict[str, 'ModuleWrapper']
-    ):
-        return [vertex_to_module_wrapper[n] for n in connection_graph.successors(self._id)]
+    def load_port_connections_info(self):
+        with open('./code_gen/connections.json') as file:
+            connections = json.load(file)
+            # json превращает int-овые ключи в строковые, поэтому требуется распарсить int
+            return {int(src_module_id): v for src_module_id, v in connections.items()}
 
-    # def _clear_buffer(self):
-    #     self._buffer = [None] * len(self.descriptor.input_ports)
+    def is_source_module(self, module: ModuleWrapper):
+        # У блока источника нет ВХОДНЫХ ПОРТОВ
+        input_port_number = len(module.descriptor.__dict__.get('input_ports', []))
+        return input_port_number == 0
 
-    @property
-    def get_execution_results(self):
-        return self._exec_res
+    def is_sink_module(self, module: ModuleWrapper):
+        # У блока являющегося стоком нет ИСХОДЯЩИХ СОЕДИНЕНИЙ, т.е. могут быть не подключенные выходные порты
+        module_output_connections = self.connections[module.get_id]
+        for output_port in module_output_connections:
+            if output_port['is_connected']:
+                return False
+        return True
 
-    def is_source(self, connection_graph: nx.MultiDiGraph):
-        self_vertex = self._id
-        return (
-                len(self._buffer) == 0 and len(self._exec_res) > 0 and
-                len(connection_graph.in_edges(self_vertex)) == 0 and
-                len(connection_graph.out_edges(self_vertex)) > 0
-        )
+    def send_module_data_to_successors(self, src_module: ModuleWrapper):
+        module_output_connections = self.connections[src_module.get_id]
+        for output_port in module_output_connections:
+            if output_port['is_connected']:
+                dst_module_id = output_port['dst_module_id']
+                dst_module = self.modules[dst_module_id]
 
-    def is_sink(self, connection_graph: nx.MultiDiGraph):
-        self_vertex = self._id
-        return (
-                len(self._buffer) > 0 and
-                (len(self._exec_res) == 0 or len(connection_graph.out_edges(self_vertex)) == 0)
-        )
+                data = src_module.get(output_port_id=output_port['src_output_port_id'])
+                dst_module.put(input_port_id=output_port['dst_input_port_id'], data=data)
 
-    @property
-    def get_id(self):
-        return self._id
+    def get_module_successors(self, module: ModuleWrapper):
+        successors = []
+        module_output_connections = self.connections[module.get_id]
+        for output_port in module_output_connections:
+            if output_port['is_connected']:
+                dst_module_id = output_port['dst_module_id']
+                dst_module = self.modules[dst_module_id]
+                successors.append(dst_module)
+        return successors
+
+    def run(self):
+        source_modules = [module for module in self.modules if self.is_source_module(module)]
+
+        work_list = [*source_modules]
+        while work_list:
+            module = work_list[0]
+            # todo join модули, у которых есть незаполненные input_ports
+            module.execute()
+            self.send_module_data_to_successors(module)
+            work_list += self.get_module_successors(module)
+            del (work_list[0])
+
+        sink_modules = [module for module in self.modules if self.is_sink_module(module)]
+        for m in sink_modules:
+            print(f'module_id={m.get_id}, res={m.get_execution_results}')
+
+
+
+
+
+
+
+
+
+

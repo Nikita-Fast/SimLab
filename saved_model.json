@@ -1,1 +1,84 @@
-{"modules": {"0": {"module_number": 0, "descriptor_file": ["modules.communication.Modulators.QAM", "qam_mod"], "scene_pos": [-346.0, 12.0], "bounding_rect_size": [135.08679780645622, 135.08679780645622]}, "1": {"module_number": 1, "descriptor_file": ["modules.general.Generators", "bin_gen"], "scene_pos": [-545.0, 143.0], "bounding_rect_size": [142.50352118555003, 142.50352118555003]}, "2": {"module_number": 2, "descriptor_file": ["modules.communication.Channels", "awgn_descr"], "scene_pos": [-151.0, -56.0], "bounding_rect_size": [154.1516544213463, 154.1516544213463]}, "3": {"module_number": 3, "descriptor_file": ["modules.communication.Demodulators.QAM", "qam_demod"], "scene_pos": [-15.0, 145.0], "bounding_rect_size": [156.56853101589076, 156.56853101589076]}}, "connections": [[1, 0, 0, 0], [0, 0, 2, 0], [2, 0, 3, 0]]}
+{
+  "modules": {
+    "0": {
+      "module_number": 0,
+      "descriptor_file": [
+        "modules.communication.Modulators.QAM",
+        "qam_mod"
+      ],
+      "scene_pos": [
+        -346.0,
+        12.0
+      ],
+      "bounding_rect_size": [
+        135.08679780645622,
+        135.08679780645622
+      ]
+    },
+    "1": {
+      "module_number": 1,
+      "descriptor_file": [
+        "modules.general.Generators",
+        "bin_gen"
+      ],
+      "scene_pos": [
+        -545.0,
+        143.0
+      ],
+      "bounding_rect_size": [
+        142.50352118555003,
+        142.50352118555003
+      ]
+    },
+    "2": {
+      "module_number": 2,
+      "descriptor_file": [
+        "modules.communication.Channels",
+        "awgn_descr"
+      ],
+      "scene_pos": [
+        -151.0,
+        -56.0
+      ],
+      "bounding_rect_size": [
+        154.1516544213463,
+        154.1516544213463
+      ]
+    },
+    "3": {
+      "module_number": 3,
+      "descriptor_file": [
+        "modules.communication.Demodulators.QAM",
+        "qam_demod"
+      ],
+      "scene_pos": [
+        -15.0,
+        145.0
+      ],
+      "bounding_rect_size": [
+        156.56853101589076,
+        156.56853101589076
+      ]
+    }
+  },
+  "connections": [
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0
+    ],
+    [
+      2,
+      0,
+      3,
+      0
+    ]
+  ]
+}
