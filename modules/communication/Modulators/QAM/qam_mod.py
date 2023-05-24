@@ -47,6 +47,8 @@ class QAMModulator:
     def __init__(self, bits_per_symbol: int, constellation=None):
         self.bits_per_symbol = bits_per_symbol
         self.constellation = constellation
+        # todo валидация созвездия:
+        #  что в нем 2**bits_per_symbol точек, м.б. еще какие-то проверки
         if constellation is None:
             self.constellation = default_qam_constellations.get_qam_constellation[bits_per_symbol]
 
@@ -90,3 +92,24 @@ output_ports = [
 # т.к пока через GUI нельзя передать параметры, то все параметры берутся из дескриптора
 
 bits_per_symbol = 4
+
+module_parameters = [
+    {
+        "bits_per_symbol": {
+            "type": int,
+            # todo использовать возможности дескриптора, про необязательные значения т.е. если
+            #  значение по умолчанию есть, то обязательно нужно его указать
+            "has_default_value": False,
+            "default_value": None,
+            "validator": None
+        }
+    },
+    {
+        "constellation": {
+            "type": 'array',
+            "has_default_value": True,
+            "default_value": None,
+            "validator": None
+        }
+    }
+]

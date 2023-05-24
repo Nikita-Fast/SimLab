@@ -66,13 +66,13 @@ class ModuleWrapper:
             # смотрим значения параметров прямо в дескрипторе
             for p_name, p_value in f_param_name_to_value.items():
                 if p_value is None:
-                    f_param_name_to_value[p_name] = self.descriptor.__dict__.get(p_name, None)
+                    f_param_name_to_value[p_name] = self.descriptor.__dict__.get(p_name)
 
             # для параметров не получивших значение, смотрим указано ли значение по умолчанию
             default_args = get_default_args(f)
             for p_name in f_param_name_to_value:
                 if f_param_name_to_value[p_name] is None:
-                    p_value = default_args.get(p_name, None)
+                    p_value = default_args.get(p_name)
                     if p_value:
                         f_param_name_to_value[p_name] = p_value
 

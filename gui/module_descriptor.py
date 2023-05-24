@@ -1,3 +1,4 @@
+import inspect
 from typing import Dict
 
 
@@ -40,4 +41,3 @@ class ModuleDescriptor:
             return type(field_value).__name__ == 'function'
 
         return True
-

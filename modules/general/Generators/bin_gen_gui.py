@@ -24,7 +24,7 @@ class BinGenGUI(QWidget):
 
     def _create_general_tab(self):
         tab = QWidget()
-        self.bits_num = None
+        self.bits_num = 'PARAM_NOT_SET'
         self.bits_num_line_edit = QLineEdit(tab)
         self.bits_num_range = range(1, 1_000_000_000)
 
@@ -71,10 +71,10 @@ class BinGenGUI(QWidget):
             else:
                 raise ValueError()
         except ValueError as e:
-            self.bits_num = None
+            self.bits_num = 'PARAM_NOT_SET'
             self.bits_num_line_edit.clear()
             self._color_bits_num_line_edit_to_red()
-        print(self.bits_num)
+        # print(self.bits_num)
 
     def get_param_values(self):
         parameter_is_set = self.bits_num is not None

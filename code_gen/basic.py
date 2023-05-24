@@ -91,7 +91,7 @@ class BasicGenerator:
             obj_creation = ''
 
             # достаем параметры из gui и сохраняем их в дескрипторе
-            if module_gui := module.module.__dict__.get('gui', None):
+            if module_gui := module.module.__dict__.get('gui'):
                 params_from_gui = module_gui.get_param_values()
                 self.save_params_from_gui_to_descriptor(params_from_gui, descriptor)
 
@@ -136,7 +136,7 @@ class BasicGenerator:
         for p_name in param_names:
             # Значение параметра полученное от GUI приоритетнее чем значение параметра указанное в дескрипторе
             # т.к. оно переписывает значение параметра, ранее указанное в дескрипторе
-            p_value = descriptor.__dict__.get(p_name, None)
+            p_value = descriptor.__dict__.get(p_name)
             if p_value:
                 param_to_value[p_name] = p_value
 
@@ -144,7 +144,7 @@ class BasicGenerator:
         default_args = self.get_default_args(method)
         for p_name in param_names:
             if param_to_value[p_name] is None:
-                p_value = default_args.get(p_name, None)
+                p_value = default_args.get(p_name)
                 if p_value:
                     param_to_value[p_name] = p_value
 

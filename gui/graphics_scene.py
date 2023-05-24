@@ -140,39 +140,6 @@ class GraphicsScene(QGraphicsScene):
 
         return module_widgets, connections
 
-    # def create_connection_graph(self) -> Dict:
-    #     def get_port_number(port: PortWidget):
-    #         module: ModuleWidget = port.parentItem()
-    #         for i, (p_out, p_in) in enumerate(itertools.zip_longest(module.outputs, module.inputs)):
-    #             if p_out and port == p_out[0]:
-    #                 return i
-    #             if p_in and port == p_in[0]:
-    #                 return i
-    #
-    #     connection_graph = nx.MultiDiGraph()
-    #
-    #     module_widgets = [i for i in self.items() if isinstance(i, ModuleWidget)]
-    #
-    #     module_to_vertex = {m: str(i) for i, m in enumerate(module_widgets)}
-    #     connection_graph.add_nodes_from(list(module_to_vertex.values()))
-    #
-    #     for m in module_widgets:
-    #         for output, _ in m.outputs:
-    #             output: PortWidget
-    #             if output.is_connected:
-    #                 connection: PortConnectionLine = output.connection
-    #
-    #                 src_port_num = get_port_number(connection.source_port)
-    #                 dst_port_num = get_port_number(connection.dst_port)
-    #                 dst_module = connection.dst_port.parentItem()
-    #                 u = module_to_vertex[m]
-    #                 v = module_to_vertex[dst_module]
-    #                 connection_graph.add_edge(u, v, output_num=src_port_num, input_num=dst_port_num)
-    #
-    #     nx.drawing.nx_pydot.write_dot(connection_graph, 'code_gen/connection_graph.dot')
-    #
-    #     return {'graph': connection_graph, 'module_to_vertex': module_to_vertex}
-
     def save_model_to_json(self):
         modules = [item for item in self.items() if isinstance(item, ModuleWidget)]
         module_to_number = {m: i for i, m in enumerate(modules)}

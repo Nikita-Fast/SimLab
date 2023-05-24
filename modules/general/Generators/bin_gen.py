@@ -1,5 +1,5 @@
 import numpy as np
-from bin_gen_gui2 import BinGenGUI
+from bin_gen_gui import BinGenGUI
 
 
 # Это модуль-функция
@@ -13,7 +13,7 @@ language = "Python"
 module_type = 'function'
 entry_point = gen_binary_data
 
-bits_num = 8
+# bits_num = 8
 
 output_ports = [
     {

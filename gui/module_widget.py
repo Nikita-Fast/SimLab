@@ -1,8 +1,11 @@
+import inspect
 import itertools
 
+from gui.generated_module_gui import GeneratedModuleGUI
 from gui.marquee_label import MarqueeLabelProxyWidget
+from gui.module_descriptor import ModuleDescriptor
 from qt import *
-from typing import Optional
+from typing import Optional, List
 import math
 from gui.port_widget import PortWidget
 
@@ -45,6 +48,7 @@ class ModuleWidget(QGraphicsItem):
         )
         self.add_ports()
         self.recalculate_rects()
+        self.gui = self.load_gui()
         self.setup_options_menu()
 
     def setup_options_menu(self):
@@ -64,9 +68,7 @@ class ModuleWidget(QGraphicsItem):
 
     def option_menu_triggered(self, action):
         if action == self.properties_action:
-            module_gui = self.module.__dict__.get('gui')
-            if module_gui:
-                module_gui.show()
+            self.gui.show()
         if action == self.delete_action:
             self.delete()
 
@@ -163,7 +165,11 @@ class ModuleWidget(QGraphicsItem):
         else:
             self.out_of_top_layer()
         painter.drawRect(self.body_rect)
-        # painter.drawRect(self.bounding_rect)
+
+        if not self.is_setup_properly():
+            # нарисовать полупрозрачный цветной квадрат поверх модуля
+            painter.fillRect(self.body_rect, QBrush(QColor(255, 112, 102, 128)))
+            self.update()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Delete:
@@ -361,3 +367,87 @@ class ModuleWidget(QGraphicsItem):
         self.selection_corner_rects[self.__TOP_RIGHT] = QRectF(x_right, y_top, self.corner_size, self.corner_size)
         self.selection_corner_rects[self.__BOTTOM_LEFT] = QRectF(x_left, y_bottom, self.corner_size, self.corner_size)
         self.selection_corner_rects[self.__BOTTOM_RIGHT] = QRectF(x_right, y_bottom, self.corner_size, self.corner_size)
+
+    def are_all_input_ports_connected(self):
+        for input_port_widget, _ in self.inputs:
+            input_port_widget: PortWidget
+            if not input_port_widget.is_connected:
+                return False
+        return True
+
+    def are_all_output_ports_connected(self):
+        for output_port_widget, _ in self.outputs:
+            output_port_widget: PortWidget
+            if not output_port_widget.is_connected:
+                return False
+        return True
+
+    def are_all_ports_connected(self):
+        return self.are_all_input_ports_connected() and self.are_all_output_ports_connected()
+
+    def load_gui(self):
+        # Если в дескрипторе указан готовый gui, то загужаем его
+        if module_gui := self.module.__dict__.get('gui'):
+            return module_gui
+        # Иначе генерируем gui самостоятельно
+        else:
+            module_param_names = self.get_param_names()
+            return GeneratedModuleGUI(module_param_names, self.module)
+
+    def get_param_names(self):
+        param_names = []
+        if (module_params := self.module.__dict__.get('module_parameters')) is not None:
+            for param_dict in module_params:
+                assert len(param_dict.keys()) == 1
+                for p_name in param_dict.keys():
+                    param_names.append(p_name)
+        else:
+            # Извлечем информацию о параметрах модуля
+            if self.module.module_type == 'class':
+                # смотрим параметры конструктора класса
+                constructor = self.module.module_class.__init__
+                param_names = inspect.getfullargspec(constructor).args
+
+                # у метода класса параметр self заполняется автоматически
+                param_names.remove('self')
+
+            if self.module.module_type == 'function':
+                # смотрим параметры функции
+                param_names = inspect.getfullargspec(self.module.entry_point).args
+
+                # пытаемся как-то учесть, что часть параметров м.б. передана другими модулями через соединения портов
+                input_port_number = len(self.module.__dict__.get('input_ports', []))
+
+        return param_names
+
+    def save_params_from_gui_to_descriptor(self, module_param_names: List[str]):
+        if module_gui := self.module.__dict__.get('gui'):
+            for p_name in module_param_names:
+                # Если в gui у параметра выставлено валидное значение, то сохраняем его в дескриптор
+                if (p_value := module_gui.__dict__.get(p_name, 'PARAM_NOT_SET')) != 'PARAM_NOT_SET':
+                    self.module.__dict__[p_name] = p_value
+                # если значение не валидное, значит параметр в данный момент не имеет значения,
+                # поэтому старое значение параметра должно быть удалено из дескриптора
+                else:
+                    if p_name in self.module.__dict__:
+                        del self.module.__dict__[p_name]
+
+    def are_all_params_set_up(self):
+        self.module: ModuleDescriptor
+        module_param_names = self.get_param_names()
+
+        # Перед проверкой, выкачиваем из gui в дескриптор значения установленных параметров
+        self.save_params_from_gui_to_descriptor(module_param_names)
+
+        for p_name in module_param_names:
+            if p_value := self.module.__dict__.get(p_name, 'PARAM NOT SET') == 'PARAM NOT SET':
+                return False
+        return True
+
+    def is_setup_properly(self):
+        checks = [
+            self.are_all_ports_connected,
+            self.are_all_params_set_up
+        ]
+
+        return all(f() for f in checks)
