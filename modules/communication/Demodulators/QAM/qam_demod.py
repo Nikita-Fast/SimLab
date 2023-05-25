@@ -6,7 +6,7 @@ from modules.communication.Modulators.QAM.qam_mod import QAMModulator
 
 class QAMDemodulator:
 
-    def __init__(self, bits_per_symbol, constellation=None, mode='hard'):
+    def __init__(self, bits_per_symbol: int, constellation=None, mode: str = 'hard'):
         self.bits_per_symbol = bits_per_symbol
         self.constellation = constellation
         self.mode = mode
@@ -122,4 +122,4 @@ output_ports = [
 # кодогенератор и интерпретатор сгенерированного кода может смотреть значения параметров прямо в дескрипторе
 # т.к пока через GUI нельзя передать параметры, то все параметры берутся из дескриптора
 
-bits_per_symbol = 4
+# bits_per_symbol = 4

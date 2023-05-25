@@ -5,7 +5,7 @@ from gui.generated_module_gui import GeneratedModuleGUI
 from gui.marquee_label import MarqueeLabelProxyWidget
 from gui.module_descriptor import ModuleDescriptor
 from qt import *
-from typing import Optional, List
+from typing import Optional, List, Any
 import math
 from gui.port_widget import PortWidget
 
@@ -391,46 +391,112 @@ class ModuleWidget(QGraphicsItem):
             return module_gui
         # Иначе генерируем gui самостоятельно
         else:
-            module_param_names = self.get_param_names()
-            return GeneratedModuleGUI(module_param_names, self.module)
+            # module_param_names = self.get_param_names()
+            return GeneratedModuleGUI(self.get_module_params(), self.module)
 
     def get_param_names(self):
-        param_names = []
-        if (module_params := self.module.__dict__.get('module_parameters')) is not None:
-            for param_dict in module_params:
-                assert len(param_dict.keys()) == 1
-                for p_name in param_dict.keys():
-                    param_names.append(p_name)
-        else:
-            # Извлечем информацию о параметрах модуля
-            if self.module.module_type == 'class':
-                # смотрим параметры конструктора класса
-                constructor = self.module.module_class.__init__
-                param_names = inspect.getfullargspec(constructor).args
-
-                # у метода класса параметр self заполняется автоматически
-                param_names.remove('self')
-
-            if self.module.module_type == 'function':
-                # смотрим параметры функции
-                param_names = inspect.getfullargspec(self.module.entry_point).args
-
-                # пытаемся как-то учесть, что часть параметров м.б. передана другими модулями через соединения портов
-                input_port_number = len(self.module.__dict__.get('input_ports', []))
+        # todo убрать этот метод
+        params_info = self.get_module_params()
+        param_names = [p_info['name'] for p_info in params_info]
 
         return param_names
 
+    def get_default_args(self, func):
+        signature = inspect.signature(func)
+        return {
+            k: v.default
+            for k, v in signature.parameters.items()
+            if v.default is not inspect.Parameter.empty
+        }
+
+    def _derive_module_params(self):
+        # Извлечем информацию о параметрах модуля анализируя конструктор модуля либо его главную функцию
+        module_params = []
+        f = None
+
+        if self.module.module_type == 'class':
+            f = self.module.module_class.__init__
+
+        if self.module.module_type == 'function':
+            f = self.module.entry_point
+
+        param_names = inspect.getfullargspec(f).args
+        param_default_values = self.get_default_args(f)
+        params_type_annotation = inspect.getfullargspec(f).annotations
+
+        # у метода класса параметр self заполняется автоматически
+        if 'self' in param_names:
+            param_names.remove('self')
+
+        for p_name in param_names:
+            param_dict = {
+                'name': p_name,
+                'type': params_type_annotation.get(p_name, Any),
+                'has_default_value': p_name in param_default_values,
+                'default_value': param_default_values.get(p_name),
+                'validator': None
+            }
+            module_params.append(param_dict)
+
+        # Если в дескрипторе явно присвоили параметру значение (bits_per_symbol=4),
+        # то это будет значением по умолчанию [если значение по умолчанию не указано в более приоритетных местах:
+        # сигнатуре функции(конструктора) или в специальном поле дескриптора module_parameters]
+        for param_dict in module_params:
+            p_name = param_dict['name']
+            if param_dict.get('has_default_value', False) is False:
+                if ((p_value := self.module.__dict__.get(p_name, 'PARAM_NOT_SET_IN_DESCRIPTOR')) !=
+                        'PARAM_NOT_SET_IN_DESCRIPTOR'):
+                    param_dict['has_default_value'] = True
+                    param_dict['default_value'] = p_value
+
+        # # пытаемся как-то учесть, что у модуля-функции часть параметров м.б. передана другими модулями
+        # через соединения портов
+        # input_port_number = len(self.module.__dict__.get('input_ports', []))
+        return module_params
+
+    def get_module_params(self):
+        param_names = []
+        derived_params = self._derive_module_params()
+        specified_params = self.module.__dict__.get('module_parameters', [])
+
+        def get_base_dict(parameter_name: str):
+            return {
+                'name': parameter_name,
+                'type': Any,
+                'has_default_value': False,
+                'default_value': None,
+                'validator': None
+            }
+
+        combined_params = {}
+        for param_dict in [*specified_params, *derived_params]:
+            p_name = param_dict['name']
+            param_info = combined_params.get(p_name, get_base_dict(p_name))
+            if param_info['type'] == Any:
+                param_info['type'] = param_dict.get('type', Any)
+            if param_info['has_default_value'] is False:
+                param_info['has_default_value'] = param_dict.get('has_default_value', False)
+            if param_info['default_value'] is None:
+                param_info['default_value'] = param_dict.get('default_value', None)
+            if param_info['validator'] is None:
+                param_info['validator'] = param_dict.get('validator', None)
+
+            if p_name not in combined_params:
+                combined_params[p_name] = param_info
+
+        return list(combined_params.values())
+
     def save_params_from_gui_to_descriptor(self, module_param_names: List[str]):
-        if module_gui := self.module.__dict__.get('gui'):
-            for p_name in module_param_names:
-                # Если в gui у параметра выставлено валидное значение, то сохраняем его в дескриптор
-                if (p_value := module_gui.__dict__.get(p_name, 'PARAM_NOT_SET')) != 'PARAM_NOT_SET':
-                    self.module.__dict__[p_name] = p_value
-                # если значение не валидное, значит параметр в данный момент не имеет значения,
-                # поэтому старое значение параметра должно быть удалено из дескриптора
-                else:
-                    if p_name in self.module.__dict__:
-                        del self.module.__dict__[p_name]
+        module_gui = self.gui
+        for p_name in module_param_names:
+            # Если в gui у параметра выставлено валидное значение, то сохраняем его в дескриптор
+            if (p_value := module_gui.__dict__.get(p_name, 'PARAM_NOT_SET')) != 'PARAM_NOT_SET':
+                self.module.__dict__[p_name] = p_value
+            # если значение не валидное, значит параметр в данный момент не имеет значения,
+            # поэтому старое значение параметра должно быть удалено из дескриптора
+            else:
+                if p_name in self.module.__dict__:
+                    del self.module.__dict__[p_name]
 
     def are_all_params_set_up(self):
         self.module: ModuleDescriptor
@@ -445,6 +511,9 @@ class ModuleWidget(QGraphicsItem):
         return True
 
     def is_setup_properly(self):
+        # Перед проверкой, выкачиваем из gui в дескриптор значения установленных параметров
+        self.save_params_from_gui_to_descriptor(self.get_param_names())
+
         checks = [
             self.are_all_ports_connected,
             self.are_all_params_set_up

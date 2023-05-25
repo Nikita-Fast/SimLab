@@ -26,14 +26,24 @@ output_ports = [
         # "f": AWGNChannel.process,
         # "inputs": [0]
     },
-    {
-        "label": "Var(N)",
-        "f": AWGNChannel.calc_noise_variance,
-        # "inputs": []
-    },
+    # {
+    #     "label": "Var(N)",
+    #     "f": AWGNChannel.calc_noise_variance,
+    #     # "inputs": []
+    # },
 ]
 
 # кодогенератор и интерпретатор сгенерированного кода может смотреть значения параметров прямо в дескрипторе
 # т.к пока через GUI нельзя передать параметры, то все параметры берутся из дескриптора
 information_bits_per_symbol = 4
 ebn0_db = 12
+
+module_parameters = [
+    {
+        'name': 'information_bits_per_symbol',
+        'type': int,
+        'has_default_value': True,
+        'default_value': 2,
+        'validator': None
+    }
+]

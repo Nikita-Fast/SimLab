@@ -1,3 +1,5 @@
+from typing import List, Any
+
 import numpy as np
 import default_qam_constellations
 
@@ -44,9 +46,9 @@ def sort_constellation_points(complex_numbers):
 class QAMModulator:
     """Класс описывающий КАМ модулятор"""
 
-    def __init__(self, bits_per_symbol: int, constellation=None):
+    def __init__(self, bits_per_symbol: int, constellation: List = None):
         self.bits_per_symbol = bits_per_symbol
-        self.constellation = constellation
+        self.constellation = np.array(constellation)
         # todo валидация созвездия:
         #  что в нем 2**bits_per_symbol точек, м.б. еще какие-то проверки
         if constellation is None:
@@ -91,25 +93,21 @@ output_ports = [
 # кодогенератор и интерпретатор сгенерированного кода может смотреть значения параметров прямо в дескрипторе
 # т.к пока через GUI нельзя передать параметры, то все параметры берутся из дескриптора
 
-bits_per_symbol = 4
+# bits_per_symbol = 4
 
 module_parameters = [
     {
-        "bits_per_symbol": {
-            "type": int,
-            # todo использовать возможности дескриптора, про необязательные значения т.е. если
-            #  значение по умолчанию есть, то обязательно нужно его указать
-            "has_default_value": False,
-            "default_value": None,
-            "validator": None
-        }
+        'name': 'bits_per_symbol',
+        'type': int,
+        'has_default_value': False,
+        'default_value': None,
+        'validator': None
     },
     {
-        "constellation": {
-            "type": 'array',
-            "has_default_value": True,
-            "default_value": None,
-            "validator": None
-        }
-    }
+        'name': 'constellation',
+        # 'type': Any,
+        'has_default_value': True,
+        'default_value': None,
+        'validator': None
+    },
 ]

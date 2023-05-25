@@ -1,10 +1,14 @@
+import ast
+from typing import Dict, List
+import typeguard
+
 from qt import *
 
 
 class GeneratedModuleGUI(QWidget):
-    def __init__(self, module_param_names, descriptor, *args, **kwargs):
+    def __init__(self, module_params_info, descriptor, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.param_names = module_param_names
+        self.params_info: Dict = module_params_info
         self.descriptor = descriptor
         self._init_gui()
 
@@ -24,14 +28,24 @@ class GeneratedModuleGUI(QWidget):
         layout.addWidget(tab_widget)
         layout.addWidget(ports_info_widget)
 
+        self.simple_handler()
+
     def _create_general_tab(self):
         tab = QWidget()
         layout = QFormLayout(tab)
-        for p_name in self.param_names:
+        for p_info in self.params_info:
+            p_name = p_info['name']
             self.__dict__[p_name] = 'PARAM_NOT_SET'
 
             line_edit = QLineEdit(tab)
-            self._color_line_edit_to_red(line_edit)
+
+            # Если предоставлено значение по умолчанию, то выставляем его
+            if p_info['has_default_value']:
+                default_value = p_info['default_value']
+                line_edit.setText(f'{default_value}')
+                self._color_line_edit_to_green(line_edit)
+            else:
+                self._color_line_edit_to_red(line_edit)
 
             line_edit.editingFinished.connect(self.simple_handler)
 
@@ -51,28 +65,49 @@ class GeneratedModuleGUI(QWidget):
         return tab
 
     def simple_handler(self):
-        for p_name in self.param_names:
+        for p_info in self.params_info:
+            p_name = p_info['name']
             line_edit: QLineEdit = self.__dict__.get(f'{p_name}_line_edit')
             text = line_edit.text()
 
-            # todo как парсить текст?
             def parse(data):
-                return data
+                try:
+                    return ast.literal_eval(data)
+                except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError) as e:
+                    return ''
 
             value = parse(text)
 
             # todo валидация значения
             def is_valid(val):
-                if val != '':
-                    return True
-                return False
+                try:
+                    typeguard.check_type(val, p_info['type'])
+                except typeguard.TypeCheckError:
+                    return False
+
+                if val == '':
+                    return False
+                return True
 
             if is_valid(value):
                 self.__dict__[p_name] = value
                 self._color_line_edit_to_green(line_edit)
             else:
-                self.__dict__[p_name] = 'PARAM_NOT_SET'
-                self._color_line_edit_to_red(line_edit)
+                if p_info['has_default_value']:
+                    default_value = p_info['default_value']
+
+                    if isinstance(default_value, str):
+                        default_value = f"'{default_value}'"
+
+                    # todo проверка типа для default_value
+                    self.__dict__[p_name] = default_value
+
+                    line_edit.setText(f'{default_value}')
+                    self._color_line_edit_to_green(line_edit)
+                else:
+                    self.__dict__[p_name] = 'PARAM_NOT_SET'
+                    line_edit.clear()
+                    self._color_line_edit_to_red(line_edit)
 
     def _color_line_edit_to_red(self, line_edit: QLineEdit):
         palette = QPalette()
