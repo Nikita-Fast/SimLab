@@ -126,3 +126,9 @@ class GeneratedModuleGUI(QWidget):
         documentation_browser.setText(documentation_text)
         layout.addWidget(documentation_browser)
         return tab
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if not self.rect().contains(event.pos()):
+            self.close()
+            self.releaseMouse()
+

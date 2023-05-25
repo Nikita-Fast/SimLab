@@ -68,7 +68,9 @@ class ModuleWidget(QGraphicsItem):
 
     def option_menu_triggered(self, action):
         if action == self.properties_action:
+            self.gui.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.gui.show()
+            self.gui.grabMouse()
         if action == self.delete_action:
             self.delete()
 

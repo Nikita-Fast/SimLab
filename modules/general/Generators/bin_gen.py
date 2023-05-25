@@ -21,12 +21,12 @@ output_ports = [
     },
 ]
 
-gui = BinGenGUI()
+# gui = BinGenGUI()
 
 module_parameters = [
     {
         'name': 'bits_num',
-        'type': float,
+        'type': int,
         'has_default_value': True,
         'default_value': 12,
         'validator': None
