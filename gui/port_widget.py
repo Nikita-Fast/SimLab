@@ -38,6 +38,23 @@ class PortWidget(QGraphicsRectItem):
     def is_selected(self, value):
         self._is_selected = value
 
+    def get_type_from_descriptor(self):
+        if self.is_input_port():
+            ports = self.parentItem().module.__dict__.get("input_ports")
+        if self.is_output_port():
+            ports = self.parentItem().module.__dict__.get("output_ports")
+        port_number = self.get_descriptor_based_serial_number()
+        port_info = ports[port_number]
+        return port_info.get("type", typing.Any)
+
+    def is_input_port(self):
+        inputs = [port for port, _ in self.parentItem().inputs]
+        return self in inputs
+
+    def is_output_port(self):
+        outputs = [port for port, _ in self.parentItem().outputs]
+        return self in outputs
+
     def get_descriptor_based_serial_number(self):
         # Получить номер этого порта в соответствии с дескриптором модуля
 

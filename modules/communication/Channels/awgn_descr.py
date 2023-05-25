@@ -1,4 +1,6 @@
 # Это модуль-класс
+from typing import List
+
 from modules.communication.Channels.awgn import AWGNChannel
 
 name = "AWGNChannel"
@@ -12,7 +14,8 @@ entry_point = AWGNChannel.process
 
 input_ports = [
     {
-        "label": "Символы"
+        "label": "Символы",
+        'type': List[complex]
     },
 ]
 
@@ -23,11 +26,13 @@ input_ports = [
 output_ports = [
     {
         "label": "noised",
+        "type": List[complex]
         # "f": AWGNChannel.process,
         # "inputs": [0]
     },
     # {
     #     "label": "Var(N)",
+    #     "type": float,
     #     "f": AWGNChannel.calc_noise_variance,
     #     # "inputs": []
     # },

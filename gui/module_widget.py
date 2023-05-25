@@ -385,7 +385,8 @@ class ModuleWidget(QGraphicsItem):
         return True
 
     def are_all_ports_connected(self):
-        return self.are_all_input_ports_connected() and self.are_all_output_ports_connected()
+        # return self.are_all_input_ports_connected() and self.are_all_output_ports_connected()
+        return self.are_all_input_ports_connected()
 
     def load_gui(self):
         # Если в дескрипторе указан готовый gui, то загужаем его
@@ -394,7 +395,12 @@ class ModuleWidget(QGraphicsItem):
         # Иначе генерируем gui самостоятельно
         else:
             # module_param_names = self.get_param_names()
-            return GeneratedModuleGUI(self.get_module_params(), self.module)
+            return GeneratedModuleGUI(
+                self.get_module_params(),
+                self.module,
+                self.get_module_inputs_info(),
+                self.get_module_outputs_info()
+            )
 
     def get_param_names(self):
         # todo убрать этот метод
@@ -491,6 +497,30 @@ class ModuleWidget(QGraphicsItem):
 
         return module_params
 
+    def get_module_inputs_info(self):
+        input_ports_info = []
+        input_ports = self.module.__dict__.get("input_ports", [])
+        for number, input_port_info in enumerate(input_ports):
+            port_dict = {
+                "label": input_port_info["label"],
+                "number": number,
+                "type": input_port_info.get("type", Any)
+            }
+            input_ports_info.append(port_dict)
+        return input_ports_info
+
+    def get_module_outputs_info(self):
+        output_ports_info = []
+        output_ports = self.module.__dict__.get("output_ports", [])
+        for number, output_port_info in enumerate(output_ports):
+            port_dict = {
+                "label": output_port_info["label"],
+                "number": number,
+                "type": output_port_info.get("type", Any)
+            }
+            output_ports_info.append(port_dict)
+        return output_ports_info
+
     def save_params_from_gui_to_descriptor(self, module_param_names: List[str]):
         module_gui = self.gui
         for p_name in module_param_names:
@@ -515,13 +545,27 @@ class ModuleWidget(QGraphicsItem):
                 return False
         return True
 
+    def are_all_connections_valid(self):
+        for input_port_widget, _ in self.inputs:
+            input_port_widget: PortWidget
+            connection = input_port_widget.connection
+            if connection is not None and not connection.is_valid:
+                return False
+        for output_port_widget, _ in self.outputs:
+            output_port_widget: PortWidget
+            connection = output_port_widget.connection
+            if connection is not None and not connection.is_valid:
+                return False
+        return True
+
     def is_setup_properly(self):
         # Перед проверкой, выкачиваем из gui в дескриптор значения установленных параметров
         self.save_params_from_gui_to_descriptor(self.get_param_names())
 
         checks = [
             self.are_all_ports_connected,
-            self.are_all_params_set_up
+            self.are_all_params_set_up,
+            self.are_all_connections_valid
         ]
 
         return all(f() for f in checks)

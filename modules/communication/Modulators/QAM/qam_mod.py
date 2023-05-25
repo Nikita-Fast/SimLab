@@ -46,7 +46,7 @@ def sort_constellation_points(complex_numbers):
 class QAMModulator:
     """Класс описывающий КАМ модулятор"""
 
-    def __init__(self, bits_per_symbol: int, constellation: List = None):
+    def __init__(self, bits_per_symbol: int, constellation: List[complex] = None):
         self.bits_per_symbol = bits_per_symbol
         self.constellation = np.array(constellation)
         # todo валидация созвездия:
@@ -76,7 +76,8 @@ entry_point = QAMModulator.execute
 
 input_ports = [
     {
-        "label": "bits"
+        "label": "bits",
+        "type": List[int]
     },
 ]
 
@@ -87,6 +88,7 @@ input_ports = [
 output_ports = [
     {
         "label": "symbols",
+        "type": List[complex]
     },
 ]
 
@@ -105,7 +107,7 @@ module_parameters = [
     },
     {
         'name': 'constellation',
-        # 'type': Any,
+        # 'type': List[complex],
         'has_default_value': True,
         'default_value': None,
         'validator': None

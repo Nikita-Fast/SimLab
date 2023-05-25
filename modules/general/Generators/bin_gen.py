@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 from bin_gen_gui import BinGenGUI
 
@@ -17,7 +19,8 @@ bits_num = 8
 
 output_ports = [
     {
-        "label": "Выход"
+        "label": "Выход",
+        "type": List[int]
     },
 ]
 

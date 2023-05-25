@@ -6,10 +6,12 @@ from qt import *
 
 
 class GeneratedModuleGUI(QWidget):
-    def __init__(self, module_params_info, descriptor, *args, **kwargs):
+    def __init__(self, module_params_info, descriptor, input_ports_info, output_ports_info, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.params_info: Dict = module_params_info
         self.descriptor = descriptor
+        self.input_ports_info = input_ports_info
+        self.output_ports_info = output_ports_info
         self._init_gui()
 
     def _init_gui(self):
@@ -20,15 +22,33 @@ class GeneratedModuleGUI(QWidget):
         tab_widget.addTab(self._create_advanced_tab(), 'Advanced')
         tab_widget.addTab(self._create_documentation_tab(self.descriptor), 'Documentation')
 
-        ports_info_widget = QTextBrowser(self)
-        ports_info_widget.setText('Ports connection status:')
-
-        ports_info_widget.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
-
         layout.addWidget(tab_widget)
-        layout.addWidget(ports_info_widget)
+        layout.addWidget(self._create_ports_widget())
 
         self.simple_handler()
+
+    def _create_ports_widget(self):
+        ports_info_widget = QTextBrowser(self)
+        ports_info_widget.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
+
+        lines = ['Ports connection status:']
+        lines.append("Input Ports:")
+        for input_port_info in self.input_ports_info:
+            i = input_port_info["number"]
+            label = input_port_info["label"]
+            type = self._param_type_to_str(input_port_info["type"])
+            lines.append(f"\t{label}({i}) of {type}")
+
+        lines.append("Output Ports:")
+        for output_port_info in self.output_ports_info:
+            i = output_port_info["number"]
+            label = output_port_info["label"]
+            type = self._param_type_to_str(output_port_info["type"])
+            lines.append(f"\t{label}({i}) of {type}")
+
+        ports_info_widget.setText('\n'.join(lines))
+
+        return ports_info_widget
 
     def _create_general_tab(self):
         tab = QWidget()
@@ -50,13 +70,26 @@ class GeneratedModuleGUI(QWidget):
 
             line_edit.editingFinished.connect(self.simple_handler)
 
-            param_type = p_info['type'].__name__ if type(p_info['type']) == type else p_info['type']._name
+            # param_type = p_info['type'].__name__ if type(p_info['type']) == type else p_info['type']._name
+            # row_name = f"{p_name}: {param_type}"
 
-            row_name = f"{p_name}: {param_type}"
+            # p_type_str = str(p_info['type'])
+            p_type_str = self._param_type_to_str(p_info['type'])
+
+            row_name = f"{p_name}: {p_type_str}"
             layout.addRow(row_name, line_edit)
             self.__dict__[f'{p_name}_line_edit'] = line_edit
 
         return tab
+
+    def _param_type_to_str(self, param_type):
+        p_type_str = str(param_type)
+        p_type_str = p_type_str.replace('<class ', '')
+        p_type_str = p_type_str.replace('>', '')
+        p_type_str = p_type_str.replace("'", '')
+        p_type_str = p_type_str.replace("typing.", '')
+        return p_type_str
+
 
     def simple_handler(self):
         for p_info in self.params_info:

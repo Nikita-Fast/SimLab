@@ -24,8 +24,16 @@ class PortConnectionLine(QGraphicsPathItem):
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsFocusable)
         self.setAcceptHoverEvents(True)
 
+        self._is_valid = True
+        if not self.are_ports_compatible():
+            self._is_valid = False
+
         # TODO Надо подумать над логированием. Возможно принтом пользоваться неправильно.
         # print(f'new connection')
+
+    @property
+    def is_valid(self):
+        return self._is_valid
 
     @property
     def source_port(self):
@@ -48,24 +56,6 @@ class PortConnectionLine(QGraphicsPathItem):
         x = self._dst_port.sceneBoundingRect().left()
         y = self._dst_port.sceneBoundingRect().center().y()
         return QPointF(x, y)
-
-    # def directPath(self):
-    #     path = QPainterPath(self.get_source_point())
-    #     path.lineTo(self.get_destination_point())
-    #     return path
-    #
-    # def squarePath(self):
-    #     s = self.get_source_point()
-    #     d = self.get_destination_point()
-    #     bounce = 30
-    #     path = QPainterPath(s)
-    #
-    #     mid_x = s.x() + ((d.x() - s.x()) * 0.5)
-    #     path.lineTo(mid_x, s.y())
-    #     path.lineTo(mid_x, d.y())
-    #     path.lineTo(d.x(), d.y())
-    #
-    #     return path
 
     def bezierPath(self):
         s = self.get_source_point()
@@ -123,6 +113,10 @@ class PortConnectionLine(QGraphicsPathItem):
             return None
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
+        if not self.isSelected():
+            if not self._is_valid:
+                self._color = QColor('red')
+
         painter.setRenderHint(painter.Antialiasing)
 
         painter.setPen(QPen(self._color, 2))
@@ -146,12 +140,18 @@ class PortConnectionLine(QGraphicsPathItem):
             self.delete()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self._color = QColor('red')
+        self._color = QColor('cyan')
         super().mousePressEvent(event)
 
     def focusOutEvent(self, event: QFocusEvent) -> None:
         self._color = QColor('black')
         super().focusOutEvent(event)
+
+    def are_ports_compatible(self):
+        src_port_type = self.source_port.get_type_from_descriptor()
+        dst_port_type = self.dst_port.get_type_from_descriptor()
+        # todo List[int] -> List[complex]? что на счет обобщения типов?
+        return src_port_type == dst_port_type
 
     def delete(self):
         # удалить ссылку из портов

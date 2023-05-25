@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 
 from modules.communication.Modulators.QAM import default_qam_constellations
@@ -89,7 +91,8 @@ entry_point = QAMDemodulator.process
 # если hard демодулятор
 input_ports = [
     {
-        "label": "symbols"
+        "label": "symbols",
+        "type": List[complex],
     }
 ]
 
@@ -110,12 +113,14 @@ input_ports = [
 output_ports = [
     {
         "label": "bits",
+        "type": List[int],
     },
 ]
 # если soft демодулятор
 # output_ports = [
 #     {
 #         "label": "llrs",
+#         "type": List[float],
 #     },
 # ]
 
