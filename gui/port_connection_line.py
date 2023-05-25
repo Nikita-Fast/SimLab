@@ -150,7 +150,6 @@ class PortConnectionLine(QGraphicsPathItem):
     def are_ports_compatible(self):
         src_port_type = self.source_port.get_type_from_descriptor()
         dst_port_type = self.dst_port.get_type_from_descriptor()
-        # todo List[int] -> List[complex]? что на счет обобщения типов?
         return src_port_type == dst_port_type
 
     def delete(self):

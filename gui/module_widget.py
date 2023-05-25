@@ -497,14 +497,24 @@ class ModuleWidget(QGraphicsItem):
 
         return module_params
 
+    def get_port_widget(self, number: int, type: str = 'input'):
+        if type == 'input':
+            return [port for port, _ in self.inputs][number]
+        if type == 'output':
+            return [port for port, _ in self.outputs][number]
+        raise ValueError(f"Тип порта может быть или 'input' или 'output'")
+
     def get_module_inputs_info(self):
         input_ports_info = []
         input_ports = self.module.__dict__.get("input_ports", [])
         for number, input_port_info in enumerate(input_ports):
+            input_port_widget: PortWidget = self.get_port_widget(number, type='input')
             port_dict = {
                 "label": input_port_info["label"],
                 "number": number,
-                "type": input_port_info.get("type", Any)
+                "type": input_port_info.get("type", Any),
+                "is_connected": input_port_widget.is_connected,
+                "connection": input_port_widget.connection
             }
             input_ports_info.append(port_dict)
         return input_ports_info
@@ -513,10 +523,13 @@ class ModuleWidget(QGraphicsItem):
         output_ports_info = []
         output_ports = self.module.__dict__.get("output_ports", [])
         for number, output_port_info in enumerate(output_ports):
+            output_port_widget: PortWidget = self.get_port_widget(number, type='output')
             port_dict = {
                 "label": output_port_info["label"],
                 "number": number,
-                "type": output_port_info.get("type", Any)
+                "type": output_port_info.get("type", Any),
+                "is_connected": output_port_widget.is_connected,
+                "connection": output_port_widget.connection
             }
             output_ports_info.append(port_dict)
         return output_ports_info
@@ -561,6 +574,10 @@ class ModuleWidget(QGraphicsItem):
     def is_setup_properly(self):
         # Перед проверкой, выкачиваем из gui в дескриптор значения установленных параметров
         self.save_params_from_gui_to_descriptor(self.get_param_names())
+
+        self.gui.input_ports_info = self.get_module_inputs_info()
+        self.gui.output_ports_info = self.get_module_outputs_info()
+        self.gui.update_errors_widget()
 
         checks = [
             self.are_all_ports_connected,

@@ -6,6 +6,8 @@ from qt import *
 
 
 class GeneratedModuleGUI(QWidget):
+    update_errors_widget_signal = Signal()
+
     def __init__(self, module_params_info, descriptor, input_ports_info, output_ports_info, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.params_info: Dict = module_params_info
@@ -13,25 +15,71 @@ class GeneratedModuleGUI(QWidget):
         self.input_ports_info = input_ports_info
         self.output_ports_info = output_ports_info
         self._init_gui()
+        self.not_set_up_params = set()
 
     def _init_gui(self):
         self.setWindowTitle(f'Properties: {self.descriptor.name}')
         layout = QVBoxLayout(self)
         tab_widget = QTabWidget(self)
-        tab_widget.addTab(self._create_general_tab(), 'General')
-        tab_widget.addTab(self._create_advanced_tab(), 'Advanced')
+        tab_widget.addTab(self._create_general_tab(), 'Parameters')
+        tab_widget.addTab(self._create_advanced_tab(), 'Ports')
         tab_widget.addTab(self._create_documentation_tab(self.descriptor), 'Documentation')
 
+        self.errors_widget = self._create_errors_widget()
+
         layout.addWidget(tab_widget)
-        layout.addWidget(self._create_ports_widget())
+        layout.addWidget(self.errors_widget)
 
         self.simple_handler()
+        
+    def update_errors_widget(self):
+        lines = ['Errors:']
+
+        # params not set up
+        not_setted_param_names = []
+        for p_info in self.params_info:
+            p_name = p_info['name']
+            if self.__dict__[p_name] == 'PARAM_NOT_SET':
+                not_setted_param_names.append(p_name)
+                lines.append(f"Parameter {p_name} has no value!")
+        # Не подключенные входы
+        for input_port_info in self.input_ports_info:
+            if not input_port_info["is_connected"]:
+                i = input_port_info["number"]
+                label = input_port_info["label"]
+                lines.append(f"Input port {label}({i}) is not connected!")
+
+        # invalid connections for input ports
+        for input_port_info in self.input_ports_info:
+            if (connection := input_port_info.get("connection")) is not None:
+                if not connection.is_valid:
+                    i = input_port_info["number"]
+                    label = input_port_info["label"]
+                    lines.append(f"Input port {label}({i}) has invalid connection!")
+
+        # invalid connections for output ports
+        for output_port_info in self.output_ports_info:
+            if (connection := output_port_info.get("connection")) is not None:
+                if not connection.is_valid:
+                    i = output_port_info["number"]
+                    label = output_port_info["label"]
+                    lines.append(f"Output port {label}({i}) has invalid connection!")
+
+        self.errors_widget.setText('\n'.join(lines))
+
+    def _create_errors_widget(self):
+        self.errors_widget = QTextBrowser(self)
+        self.errors_widget.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
+        self.errors_widget.setText('Errors:')
+
+        return self.errors_widget
 
     def _create_ports_widget(self):
         ports_info_widget = QTextBrowser(self)
         ports_info_widget.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
 
-        lines = ['Ports connection status:']
+        # lines = ['Ports connection status:']
+        lines = []
         lines.append("Input Ports:")
         for input_port_info in self.input_ports_info:
             i = input_port_info["number"]
@@ -90,7 +138,6 @@ class GeneratedModuleGUI(QWidget):
         p_type_str = p_type_str.replace("typing.", '')
         return p_type_str
 
-
     def simple_handler(self):
         for p_info in self.params_info:
             p_name = p_info['name']
@@ -144,6 +191,9 @@ class GeneratedModuleGUI(QWidget):
                     line_edit.clear()
                     self._color_line_edit_to_red(line_edit)
 
+        self.update_errors_widget()
+        # self.update_errors_widget_signal.emit()
+
     def _color_line_edit_to_red(self, line_edit: QLineEdit):
         palette = QPalette()
         palette.setColor(QPalette.Base, QColor.fromRgb(242, 115, 46, a=200))
@@ -155,9 +205,10 @@ class GeneratedModuleGUI(QWidget):
         line_edit.setPalette(palette)
 
     def _create_advanced_tab(self):
-        tab = QWidget()
-        layout = QFormLayout(tab)
-        return tab
+        # tab = QWidget()
+        # layout = QFormLayout(tab)
+        # return tab
+        return self._create_ports_widget()
 
     def _create_documentation_tab(self, descriptor):
         tab = QWidget()
