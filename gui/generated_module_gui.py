@@ -130,5 +130,5 @@ class GeneratedModuleGUI(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if not self.rect().contains(event.pos()):
             self.close()
-            self.releaseMouse()
+            # self.releaseMouse()
 

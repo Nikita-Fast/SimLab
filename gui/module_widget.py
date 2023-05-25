@@ -70,7 +70,7 @@ class ModuleWidget(QGraphicsItem):
         if action == self.properties_action:
             self.gui.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.gui.show()
-            self.gui.grabMouse()
+            # self.gui.grabMouse()
         if action == self.delete_action:
             self.delete()
 
