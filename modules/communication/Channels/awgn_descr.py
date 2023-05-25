@@ -38,12 +38,17 @@ output_ports = [
 information_bits_per_symbol = 4
 ebn0_db = 12
 
+
+class PositiveIntValidator:
+    def is_valid(self, value: int):
+        return isinstance(value, int) and value > 0
+
 module_parameters = [
     {
         'name': 'information_bits_per_symbol',
         'type': int,
         'has_default_value': True,
         'default_value': 2,
-        'validator': None
+        'validator': PositiveIntValidator()
     }
 ]

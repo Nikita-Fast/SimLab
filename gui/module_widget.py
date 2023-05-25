@@ -5,7 +5,7 @@ from gui.generated_module_gui import GeneratedModuleGUI
 from gui.marquee_label import MarqueeLabelProxyWidget
 from gui.module_descriptor import ModuleDescriptor
 from qt import *
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 import math
 from gui.port_widget import PortWidget
 
@@ -485,7 +485,11 @@ class ModuleWidget(QGraphicsItem):
             if p_name not in combined_params:
                 combined_params[p_name] = param_info
 
-        return list(combined_params.values())
+        module_params = list(combined_params.values())
+        ordered_param_names = [p_info['name'] for p_info in derived_params]
+        module_params.sort(key=lambda x: ordered_param_names.index(x['name']))
+
+        return module_params
 
     def save_params_from_gui_to_descriptor(self, module_param_names: List[str]):
         module_gui = self.gui

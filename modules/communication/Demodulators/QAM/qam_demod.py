@@ -123,3 +123,13 @@ output_ports = [
 # т.к пока через GUI нельзя передать параметры, то все параметры берутся из дескриптора
 
 # bits_per_symbol = 4
+
+module_parameters = [
+    {
+        'name': 'mode',
+        'type': str,
+        'has_default_value': True,
+        'default_value': 'hard',
+        'validator': lambda x: x in ['hard', 'soft']
+    }
+]

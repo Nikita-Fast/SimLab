@@ -29,6 +29,6 @@ module_parameters = [
         'type': int,
         'has_default_value': True,
         'default_value': 12,
-        'validator': None
+        'validator': lambda x: isinstance(x, int) and (0 < x < 1_000_000_000)
     }
 ]

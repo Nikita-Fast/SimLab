@@ -72,14 +72,22 @@ class GeneratedModuleGUI(QWidget):
 
             value = parse(text)
 
-            # todo валидация значения
-            def is_valid(val):
+            # валидация значения
+            def is_valid(value):
                 try:
-                    typeguard.check_type(val, p_info['type'])
+                    typeguard.check_type(value, p_info['type'])
                 except typeguard.TypeCheckError:
                     return False
 
-                if val == '':
+                if validator := p_info.get('validator'):
+                    if type(validator).__name__ == 'class':
+                        if not validator.is_valid(value):
+                            return False
+                    if type(validator).__name__ == 'function':
+                        if not validator(value):
+                            return False
+
+                if value == '':
                     return False
                 return True
 
