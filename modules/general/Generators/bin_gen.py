@@ -21,7 +21,7 @@ output_ports = [
     },
 ]
 
-# gui = BinGenGUI()
+gui = BinGenGUI()
 
 module_parameters = [
     {

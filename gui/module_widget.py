@@ -455,7 +455,6 @@ class ModuleWidget(QGraphicsItem):
         return module_params
 
     def get_module_params(self):
-        param_names = []
         derived_params = self._derive_module_params()
         specified_params = self.module.__dict__.get('module_parameters', [])
 

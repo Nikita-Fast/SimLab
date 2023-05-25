@@ -1,5 +1,5 @@
 import ast
-from typing import Dict, List
+from typing import Dict
 import typeguard
 
 from qt import *
@@ -33,6 +33,7 @@ class GeneratedModuleGUI(QWidget):
     def _create_general_tab(self):
         tab = QWidget()
         layout = QFormLayout(tab)
+
         for p_info in self.params_info:
             p_name = p_info['name']
             self.__dict__[p_name] = 'PARAM_NOT_SET'
@@ -49,19 +50,12 @@ class GeneratedModuleGUI(QWidget):
 
             line_edit.editingFinished.connect(self.simple_handler)
 
-            layout.addRow(p_name, line_edit)
+            param_type = p_info['type'].__name__ if type(p_info['type']) == type else p_info['type']._name
+
+            row_name = f"{p_name}: {param_type}"
+            layout.addRow(row_name, line_edit)
             self.__dict__[f'{p_name}_line_edit'] = line_edit
 
-            # self.bits_num = 'PARAM_NOT_SET'
-            # self.bits_num_line_edit = QLineEdit(tab)
-            # self.bits_num_range = range(1, 1_000_000_000)
-
-            # self._color_bits_num_line_edit_to_red()
-
-            # self.bits_num_line_edit.editingFinished.connect(self.process_bits_num_input)
-            #
-            # layout = QFormLayout(tab)
-            # layout.addRow('Bits Number', self.bits_num_line_edit)
         return tab
 
     def simple_handler(self):
@@ -132,20 +126,3 @@ class GeneratedModuleGUI(QWidget):
         documentation_browser.setText(documentation_text)
         layout.addWidget(documentation_browser)
         return tab
-
-    # def process_bits_num_input(self):
-    #     try:
-    #         bits_num = int(self.bits_num_line_edit.text())
-    #         if self.bits_num_range.start <= bits_num <= self.bits_num_range.stop:
-    #             self.bits_num = bits_num
-    #             self._color_bits_num_line_edit_to_green()
-    #         else:
-    #             raise ValueError()
-    #     except ValueError as e:
-    #         self.bits_num = 'PARAM_NOT_SET'
-    #         self.bits_num_line_edit.clear()
-    #         self._color_bits_num_line_edit_to_red()
-
-    # def get_param_values(self):
-    #     parameter_is_set = self.bits_num is not None
-    #     return {'bits_num': {'param_is_set': parameter_is_set, 'param_value': self.bits_num}}
