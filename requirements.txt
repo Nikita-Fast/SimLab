@@ -1,3 +1,5 @@
 typeguard
 PySide2
 numpy
+networkx
+matplotlib

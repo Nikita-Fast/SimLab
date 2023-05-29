@@ -5,7 +5,7 @@ class MarqueeLabelProxyWidget(QGraphicsProxyWidget):
     def __init__(self, text: str, parent=None):
         super().__init__(parent)
         label = MarqueeLabel()
-        short_msg = 'Ккккк'
+        short_msg = 'Label'
         label.setText(short_msg)
         self.setWidget(label)
         self.setTransformOriginPoint(self.boundingRect().center())

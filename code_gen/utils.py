@@ -153,13 +153,3 @@ class FlowGraph:
         sink_modules = [module for module in self.modules if self.is_sink_module(module)]
         for m in sink_modules:
             print(f'module_id={m.get_id}, res={m.get_execution_results}')
-
-
-
-
-
-
-
-
-
-
