@@ -1,5 +1,5 @@
 from gui.module_widget import ModuleWidget
-print("success")
+# print("success")
 
 
 class XX (ModuleWidget):

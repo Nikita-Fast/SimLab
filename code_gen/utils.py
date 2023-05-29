@@ -1,3 +1,4 @@
+import copy
 import inspect
 import json
 from typing import Dict, List
@@ -20,7 +21,9 @@ class ModuleWrapper:
         self._f = descriptor.entry_point
         self._module_obj = module_obj
         self._buffer = [None] * len(getattr(self.descriptor, 'input_ports', []))
-        self._exec_res = [None] * len(getattr(self.descriptor, 'output_ports', []))
+        # если у модуля нет выходных портов, то резервируем место под один результат вычисления
+        # иначе sink-модули просто не будут вычисляться
+        self._exec_res = [None] * len(getattr(self.descriptor, 'output_ports', [None]))
         # имя вершины в connection_graph, которой соответствует этот модуль
         self._id = id
 
@@ -30,7 +33,14 @@ class ModuleWrapper:
 
     def get(self, output_port_id: int):
         # получить значение с указанного выхода
-        return self._exec_res[output_port_id]
+        # TODO копирование добавлено как костыль для поддержания множественного соединения из выходного порта,
+        #  заменить более оптимальным способом
+        return copy.deepcopy(self._exec_res[output_port_id])
+
+    def has_enough_data(self):
+        # Возвращает True, если на каждый входной порт поступили данные
+        # todo что если 'None' это и есть поступившее значение?
+        return all(x is not None for x in self._buffer)
 
     @property
     def get_execution_results(self):
@@ -41,10 +51,15 @@ class ModuleWrapper:
         return self._id
 
     def execute(self):
+        # todo у sink модуля нет выходов, но вычислить его функцию надо
         for output_port_number in range(len(self._exec_res)):
             # Выбираем функцию-вычислитель. Если в дескрипторе явно не указана функцию-вычислитель,
             # то по умолчанию используется descriptor.entry_point
-            f = self.descriptor.output_ports[output_port_number].get('f', self._f)
+            output_ports = self.descriptor.__dict__.get("output_ports")
+            if output_ports:
+                f = self.descriptor.output_ports[output_port_number].get('f', self._f)
+            else:
+                f = self._f
 
             # выбираем входные порты, с которых возьмем параметры для вызова функции-вычислителя
             # если номера портов не указаны в дескрипторе явно, то берем первые k портов,
@@ -55,7 +70,9 @@ class ModuleWrapper:
             assert ('self' not in f_param_name_to_value)
 
             first_k_inputs = [i for i, _ in enumerate(f_param_name_to_value)]
-            inputs: List[int] = self.descriptor.output_ports[output_port_number].get('inputs', first_k_inputs)
+            inputs = first_k_inputs
+            if output_ports:
+                inputs: List[int] = self.descriptor.output_ports[output_port_number].get('inputs', first_k_inputs)
 
             # берем значения параметров из буфера
             for i, p_name in enumerate(f_param_name_to_value):
@@ -106,48 +123,53 @@ class FlowGraph:
             return {int(src_module_id): v for src_module_id, v in connections.items()}
 
     def is_source_module(self, module: ModuleWrapper):
-        # У блока источника нет ВХОДНЫХ ПОРТОВ
+        # У модуля источника нет ВХОДНЫХ ПОРТОВ
         input_port_number = len(module.descriptor.__dict__.get('input_ports', []))
         return input_port_number == 0
 
     def is_sink_module(self, module: ModuleWrapper):
-        # У блока являющегося стоком нет ИСХОДЯЩИХ СОЕДИНЕНИЙ, т.е. могут быть не подключенные выходные порты
-        module_output_connections = self.connections[module.get_id]
-        for output_port in module_output_connections:
-            if output_port['is_connected']:
-                return False
-        return True
+        # У модуля являющегося стоком нет ИСХОДЯЩИХ СОЕДИНЕНИЙ, т.е. могут быть не подключенные выходные порты
+        module_outgoing_connections = self.connections[module.get_id]
+        return len(module_outgoing_connections) == 0
 
     def send_module_data_to_successors(self, src_module: ModuleWrapper):
         module_output_connections = self.connections[src_module.get_id]
-        for output_port in module_output_connections:
-            if output_port['is_connected']:
-                dst_module_id = output_port['dst_module_id']
-                dst_module = self.modules[dst_module_id]
-
-                data = src_module.get(output_port_id=output_port['src_output_port_id'])
-                dst_module.put(input_port_id=output_port['dst_input_port_id'], data=data)
+        for connection_info in module_output_connections:
+            dst_module_id = connection_info['dst_module_id']
+            dst_module = self.modules[dst_module_id]
+            data = src_module.get(connection_info['src_output_port_id'])
+            dst_module.put(input_port_id=connection_info['dst_input_port_id'], data=data)
 
     def get_module_successors(self, module: ModuleWrapper):
         successors = []
         module_output_connections = self.connections[module.get_id]
         for output_port in module_output_connections:
-            if output_port['is_connected']:
-                dst_module_id = output_port['dst_module_id']
-                dst_module = self.modules[dst_module_id]
-                successors.append(dst_module)
+            dst_module_id = output_port['dst_module_id']
+            dst_module = self.modules[dst_module_id]
+            successors.append(dst_module)
         return successors
 
     def run(self):
+        print("---MODELLING START---")
         source_modules = [module for module in self.modules if self.is_source_module(module)]
 
         work_list = [*source_modules]
         while work_list:
             module = work_list[0]
+
             # todo join модули, у которых есть незаполненные input_ports
-            module.execute()
-            self.send_module_data_to_successors(module)
-            work_list += self.get_module_successors(module)
+            if module.has_enough_data():
+                module.execute()
+                self.send_module_data_to_successors(module)
+
+                # добавляем в очередь только новые модули
+                for succ in self.get_module_successors(module):
+                    if succ not in work_list:
+                        work_list.append(succ)
+            else:
+                # если модулю не хватает данных, то его обработка откладывается
+                work_list.append(module)
+
             del (work_list[0])
 
         sink_modules = [module for module in self.modules if self.is_sink_module(module)]

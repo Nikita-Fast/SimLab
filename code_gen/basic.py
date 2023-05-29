@@ -37,7 +37,7 @@ class BasicGenerator:
         # создать и запустить flow_graph
         code_lines += self.gen_flow_graph_creation()
 
-        code_lines += ['', f'print(\'EXECUTED\')']
+        # code_lines += ['', f'print(\'EXECUTED\')']
 
         with open(self.OUTPUT_FILE_NAME, 'w') as f:
             f.write('\n'.join(code_lines))
@@ -157,7 +157,6 @@ class BasicGenerator:
 
     def gen_module_constructor_invocation(self, descriptor, module_class: type):
         param_to_value = self.fetch_method_params('__init__', module_class, descriptor)
-        print(param_to_value)
         s_params = self.method_params_to_str(param_to_value)
         descriptor_name = os.path.splitext(descriptor.__file__)[0].split('/')[-1]
         return f'{descriptor_name}.{module_class.__name__}({s_params})'

@@ -29,10 +29,10 @@ class ToolBar(QToolBar):
     def action_handler(self, action):
         if action.text() == ButtonNames.MODEL_GRAPH.value:
             # TODO Надо подумать над логированием. Возможно принтом пользоваться неправильно.
-            print('<Model Graph> handler')
+            # print('<Model Graph> handler')
             self.model_graph_btn_clicked.emit()
         if action.text() == ButtonNames.GENERATE.value:
-            print('<Generate Code> handler')
+            # print('<Generate Code> handler')
             self.generate_code_btn_clicked.emit()
         if action.text() == ButtonNames.SAVE_MODEL.value:
             self.save_model_btn_clicked.emit()

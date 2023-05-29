@@ -6,7 +6,9 @@ from bin_gen_gui import BinGenGUI
 
 # Это модуль-функция
 def gen_binary_data(bits_num: int = 16):
-    return list(np.random.randint(low=0, high=2, size=bits_num))
+    data = list(np.random.randint(low=0, high=2, size=bits_num))
+    # print(f"generated bits: {data}")
+    return data
 
 
 name = "Binary Generator"

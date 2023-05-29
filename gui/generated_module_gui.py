@@ -178,11 +178,14 @@ class GeneratedModuleGUI(QWidget):
                 if p_info['has_default_value']:
                     default_value = p_info['default_value']
 
+                    # todo проверка типа для default_value
+                    self.__dict__[p_name] = default_value
+
                     if isinstance(default_value, str):
                         default_value = f"'{default_value}'"
 
-                    # todo проверка типа для default_value
-                    self.__dict__[p_name] = default_value
+                    # # todo проверка типа для default_value
+                    # self.__dict__[p_name] = default_value
 
                     line_edit.setText(f'{default_value}')
                     self._color_line_edit_to_green(line_edit)
@@ -192,7 +195,6 @@ class GeneratedModuleGUI(QWidget):
                     self._color_line_edit_to_red(line_edit)
 
         self.update_errors_widget()
-        # self.update_errors_widget_signal.emit()
 
     def _color_line_edit_to_red(self, line_edit: QLineEdit):
         palette = QPalette()

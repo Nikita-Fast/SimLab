@@ -8,7 +8,7 @@ from modules.communication.Modulators.QAM.qam_mod import QAMModulator
 
 class QAMDemodulator:
 
-    def __init__(self, bits_per_symbol: int, constellation=None, mode: str = 'hard'):
+    def __init__(self, bits_per_symbol: int = 2, constellation=None, mode: str = 'hard'):
         self.bits_per_symbol = bits_per_symbol
         self.constellation = constellation
         self.mode = mode
@@ -17,7 +17,9 @@ class QAMDemodulator:
 
     def process(self, data: np.ndarray, noise_variance=None) -> np.ndarray:
         if self.mode == 'hard':
-            return self.demodulate_hard(data)
+            res = self.demodulate_hard(data)
+            print(f"demodulated: {res}")
+            return res
         elif self.mode == 'soft':
             # как посчитать дисперсию шума?
             raise Exception('not implemented')

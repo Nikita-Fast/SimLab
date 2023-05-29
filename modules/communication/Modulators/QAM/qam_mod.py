@@ -101,8 +101,8 @@ module_parameters = [
     {
         'name': 'bits_per_symbol',
         'type': int,
-        'has_default_value': False,
-        'default_value': None,
+        'has_default_value': True,
+        'default_value': 2,
         'validator': None
     },
     {

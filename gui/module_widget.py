@@ -104,8 +104,9 @@ class ModuleWidget(QGraphicsItem):
     def delete(self):
         # удалить все входящие и исходящие соединения
         for port, _ in self.inputs + self.outputs:
-            if port.is_connected:
-                port.connection.delete()
+            port: PortWidget
+            for c in port.connections:
+                c.delete()
         # удалить этот модуль со сцены
         self.scene().removeItem(self)
 
@@ -337,11 +338,6 @@ class ModuleWidget(QGraphicsItem):
             )
             self.recalculate_label(label, output_port)
 
-    # def recalculate_connections(self):
-    #     for port, _ in self.inputs + self.outputs:
-    #         if port.is_connected:
-    #             port.connection.recalculate()
-
     def recalculate_rects(self):
         h = self.bounding_rect.height() * 0.8
         w = self.bounding_rect.width() * 0.8
@@ -514,7 +510,7 @@ class ModuleWidget(QGraphicsItem):
                 "number": number,
                 "type": input_port_info.get("type", Any),
                 "is_connected": input_port_widget.is_connected,
-                "connection": input_port_widget.connection
+                "connections": input_port_widget.connections
             }
             input_ports_info.append(port_dict)
         return input_ports_info
@@ -529,7 +525,7 @@ class ModuleWidget(QGraphicsItem):
                 "number": number,
                 "type": output_port_info.get("type", Any),
                 "is_connected": output_port_widget.is_connected,
-                "connection": output_port_widget.connection
+                "connections": output_port_widget.connections
             }
             output_ports_info.append(port_dict)
         return output_ports_info
@@ -561,14 +557,14 @@ class ModuleWidget(QGraphicsItem):
     def are_all_connections_valid(self):
         for input_port_widget, _ in self.inputs:
             input_port_widget: PortWidget
-            connection = input_port_widget.connection
-            if connection is not None and not connection.is_valid:
-                return False
+            for connection in input_port_widget.connections:
+                if connection is not None and not connection.is_valid:
+                    return False
         for output_port_widget, _ in self.outputs:
             output_port_widget: PortWidget
-            connection = output_port_widget.connection
-            if connection is not None and not connection.is_valid:
-                return False
+            for connection in output_port_widget.connections:
+                if connection is not None and not connection.is_valid:
+                    return False
         return True
 
     def is_setup_properly(self):

@@ -16,8 +16,8 @@ class PortConnectionLine(QGraphicsPathItem):
         self._arrow_height = 14
         self._arrow_width = 6
 
-        self._source_port.connection = self
-        self._dst_port.connection = self
+        self._source_port.add_connection(self)
+        self._dst_port.add_connection(self)
 
         self._color = Qt.black
 
@@ -154,7 +154,9 @@ class PortConnectionLine(QGraphicsPathItem):
 
     def delete(self):
         # удалить ссылку из портов
-        self._source_port.disconnect()
-        self._dst_port.disconnect()
+        # self._source_port.disconnect()
+        # self._dst_port.disconnect()
+        self._source_port.remove_connection(self)
+        self._dst_port.remove_connection(self)
         # удалить со сцены
         self.scene().removeItem(self)

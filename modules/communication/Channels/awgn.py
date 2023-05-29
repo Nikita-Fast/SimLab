@@ -20,7 +20,6 @@ class AWGNChannel:
         self.ebn0_db = ebn0_db
 
     def process(self, data: np.ndarray) -> np.ndarray:
-        print(f'{AWGNChannel.process}')
         p = calc_noise_power(self.ebn0_db, data, self.information_bits_per_symbol)
 
         symbols_num = len(data)

@@ -35,7 +35,10 @@ class GraphicsScene(QGraphicsScene):
         for item in self.items(mouse_press_pos):
             if isinstance(item, PortWidget):
                 other_port = item
-                if not other_port.is_connected:
+                if not other_port.is_connected or (
+                    # Уже подключенным портом м.б лишь выходной порт(который выбирается первым)
+                    self.selected_port is None and other_port.is_output_port()
+                ):
                     if self.selected_port is None:
                         self.selected_port = other_port
                         self.selected_port.is_selected = True
@@ -102,38 +105,24 @@ class GraphicsScene(QGraphicsScene):
         # сохраняем виджеты в список в порядке роста id.
         # В виде словаря сохраняет информацию об исходящих соединениях каждого module_widget
 
-        def get_port_number(port: PortWidget):
-            module: ModuleWidget = port.parentItem()
-            for i, (p_out, p_in) in enumerate(itertools.zip_longest(module.outputs, module.inputs)):
-                if p_out and port == p_out[0]:
-                    return i
-                if p_in and port == p_in[0]:
-                    return i
-
         module_widgets = [item for item in self.items() if isinstance(item, ModuleWidget)]
 
         connections = {}
         for module_id, module in enumerate(module_widgets):
-            block_outgoing_connections_info = []
-            for output_port_id, (output, _) in enumerate(module.outputs):
-                output: PortWidget
+            module_outgoing_connections_info = []
+            for output_port_id, (output_port, _) in enumerate(module.outputs):
+                output_port: PortWidget
 
-                connection_info = {
-                    "src_output_port_id": output_port_id,
-                    "is_connected": False,
-                    "dst_module_id": None,
-                    "dst_input_port_id": None
-                }
-
-                if output.is_connected:
-                    connection_info['is_connected'] = True
-                    connection: PortConnectionLine = output.connection
-                    connection_info['dst_input_port_id'] = get_port_number(connection.dst_port)
+                for connection in output_port.connections:
+                    connection: PortConnectionLine
                     dst_module = connection.dst_port.parentItem()
-                    connection_info['dst_module_id'] = module_widgets.index(dst_module)
 
-                block_outgoing_connections_info.append(connection_info)
-            connections[module_id] = block_outgoing_connections_info
+                    module_outgoing_connections_info.append({
+                        "src_output_port_id": output_port_id,
+                        "dst_module_id": module_widgets.index(dst_module),
+                        "dst_input_port_id": connection.dst_port.get_descriptor_based_serial_number()
+                    })
+            connections[module_id] = module_outgoing_connections_info
 
         with open('./code_gen/connections.json', 'w') as file:
             json.dump(connections, file)
