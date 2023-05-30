@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         self.modules_dock_widget.widget().scanning()
 
         self.modules_dock_widget.widget().module_double_clicked.connect(self.centralWidget().scene().add_module_widget)
-        self.tool_bar.generate_code_btn_clicked.connect(self.helper)
+        self.tool_bar.generate_code_btn_clicked.connect(self.generate_code_helper)
         # self.tool_bar.run_code_btn_clicked.connect(run_modelling_code)
         self.tool_bar.run_code_btn_clicked.connect(self.code_runner_helper)
 
@@ -44,6 +44,7 @@ class MainWindow(QMainWindow):
         max_ebn0_db = self.menuBar().max_ebn0_db
         run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
 
-    def helper(self):
+    def generate_code_helper(self):
         module_widget_list, _ = self.centralWidget().scene().prepare_flow_graph()
-        run_test_code_generation2(module_widget_list)
+        threads_number = self.menuBar().threads_number
+        run_test_code_generation2(module_widget_list, threads_number)

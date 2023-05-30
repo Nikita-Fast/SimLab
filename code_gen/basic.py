@@ -11,9 +11,9 @@ from matplotlib import pyplot as plt
 from gui.module_widget import ModuleWidget
 
 
-def run_test_code_generation2(module_widgets):
+def run_test_code_generation2(module_widgets, threads_number: int):
     g = BasicGenerator()
-    g.generate_modelling_code(module_widgets)
+    g.generate_modelling_code(module_widgets, threads_number)
 
 
 def run_modelling_code():
@@ -85,7 +85,7 @@ def run_concurrently(threads_number: int, min_ebn0_db: int, max_ebn0_db: int):
 class BasicGenerator:
     OUTPUT_FILE_NAME = 'code_gen/generated.py'
 
-    def generate_modelling_code(self, module_widgets: List[ModuleWidget]):
+    def generate_modelling_code(self, module_widgets: List[ModuleWidget], threads_number: int):
         modules = module_widgets
         # import
         import_lines = [
@@ -94,7 +94,7 @@ class BasicGenerator:
         ]
         import_lines += self.gen_descriptors_import([m.module for m in modules])
 
-        code_lines = ['']
+        code_lines = [f"bin_gen.bits_num = bin_gen.bits_num // {threads_number}", ""]
         # create dicts
         code_lines.append(f'id_to_module = dict()')
         code_lines.append(f'id_to_descriptor = dict()')
