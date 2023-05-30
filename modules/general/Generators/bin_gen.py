@@ -1,7 +1,6 @@
 from typing import List
 
 import numpy as np
-from bin_gen_gui import BinGenGUI
 
 
 # Это модуль-функция
@@ -33,7 +32,7 @@ module_parameters = [
         'name': 'bits_num',
         'type': int,
         'has_default_value': True,
-        'default_value': 12,
+        'default_value': 100_000,
         'validator': lambda x: isinstance(x, int) and (0 < x < 1_000_000_000)
     }
 ]

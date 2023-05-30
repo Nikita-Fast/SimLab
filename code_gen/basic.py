@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import os.path
 import sys
 from typing import Dict, Any, List
@@ -8,20 +9,30 @@ from gui.module_widget import ModuleWidget
 
 def run_test_code_generation2(module_widgets):
     g = BasicGenerator()
-    g.process_model(module_widgets)
+    g.generate_modelling_code(module_widgets)
+
+
+def run_modelling_code():
+    import code_gen.generated as gen
+    gen.f()
+    # deimport module
+    sys.modules.pop(gen.__name__)
+    del gen
 
 
 class BasicGenerator:
     OUTPUT_FILE_NAME = 'code_gen/generated.py'
 
-    def process_model(self, module_widgets: List[ModuleWidget]):
-        code_lines = ['']
+    def generate_modelling_code(self, module_widgets: List[ModuleWidget]):
         modules = module_widgets
         # import
-        code_lines.append(f'from code_gen.utils import ModuleWrapper, FlowGraph')
-        code_lines.append(f'import networkx as nx')
-        code_lines += self.gen_descriptors_import([m.module for m in modules])
+        import_lines = [
+            f"from code_gen.utils import ModuleWrapper, FlowGraph",
+            f"from utils.custom_exceptions import *"
+        ]
+        import_lines += self.gen_descriptors_import([m.module for m in modules])
 
+        code_lines = ['']
         # create dicts
         code_lines.append(f'id_to_module = dict()')
         code_lines.append(f'id_to_descriptor = dict()')
@@ -35,17 +46,16 @@ class BasicGenerator:
         code_lines += self.gen_module_wrapper_creation()
 
         # создать и запустить flow_graph
-        code_lines += self.gen_flow_graph_creation()
+        code_lines += self.gen_flow_graph_creation_and_processing()
 
-        # code_lines += ['', f'print(\'EXECUTED\')']
+        # оборачиваем код моделирования вызовом функции
+        code_lines = self.gen_function('f', code_lines)
 
         with open(self.OUTPUT_FILE_NAME, 'w') as f:
-            f.write('\n'.join(code_lines))
+            f.write('\n'.join(itertools.chain(import_lines, code_lines)))
 
-        import code_gen.generated as gen
-        # deimport module
-        sys.modules.pop(gen.__name__)
-        del gen
+    def gen_function(self, func_name: str, body: List[str]):
+        return ["", "", f"def {func_name}():", *[f"\t{line}" for line in body]]
 
     def gen_module_wrapper_creation(self):
         return [
@@ -56,11 +66,25 @@ class BasicGenerator:
             '\tmodule_wrappers.append(m)',
         ]
 
-    def gen_flow_graph_creation(self):
+    def gen_flow_graph_creation_and_processing(self):
+        #   flow_graph = FlowGraph(modules=module_wrappers)
+        # 	while True:
+        # 		try:
+        # 			flow_graph.run()
+        # 		except SourceModuleRunOutOfDataException as e:
+        #           flow_graph.execute_storage_modules()
+        # 			print('<><><>MODELLING DONE<><><>')
+        # 			break
         return [
-            '',
-            'flow_graph = FlowGraph(modules=module_wrappers)',
-            'flow_graph.run()',
+            "",
+            "flow_graph = FlowGraph(modules=module_wrappers)",
+            "while True:",
+            "\ttry:",
+            "\t\tflow_graph.run()",
+            "\texcept SourceModuleRunOutOfDataException as e:",
+            "\t\tflow_graph.execute_storage_modules()",
+            "\t\tprint('<><><>MODELLING DONE<><><>')",
+            "\t\tbreak",
         ]
 
     def gen_descriptors_import(self, descriptors):
@@ -163,7 +187,10 @@ class BasicGenerator:
 
     def gen_module_name(self, module: ModuleWidget, module_id: int):
         descriptor = module.module
-        name = descriptor.name.replace(' ', '')
+        name = descriptor.name
+        bad_characters = {'/', ' '}
+        for c in bad_characters:
+            name = name.replace(c, '_')
         return f'module_{module_id}_{name}'
 
     def method_params_to_str(self, params: Dict[str, Any]) -> str:

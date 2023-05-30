@@ -1,7 +1,5 @@
 from typing import List
 
-from matplotlib import pyplot as plt
-
 
 def calc_ber(sent_bits, received_bits):
     if len(sent_bits) != len(received_bits):
@@ -15,20 +13,8 @@ def calc_ber(sent_bits, received_bits):
             bit_errors += 1
 
     ber = bit_errors / len(sent_bits)
-    print(f"BER={ber}")
+    # print(f"BER={ber}")
     return ber
-
-
-def plot_ber(ebn0_db_list, ber_list, name: str):
-    if len(ebn0_db_list) != len(ber_list):
-        raise ValueError('Число значений по оси Х должно быть равно числу значений по оси У')
-    plt.yscale("log")
-    plt.grid(visible='true')
-    plt.xlabel("Eb/N0, dB")
-    plt.ylabel("BER")
-    plt.plot(*zip(ebn0_db_list, ber_list), '--o', label=name)
-    plt.legend()
-    plt.show()
 
 
 name = "BER Calculator"
@@ -45,6 +31,13 @@ input_ports = [
     {
         "label": "received_bits",
         "type": List[int]
+    }
+]
+
+output_ports = [
+    {
+        "label": "BER",
+        "type": float
     }
 ]
 

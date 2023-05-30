@@ -108,6 +108,16 @@ class ModuleWrapper:
             # выполняем вычисления
             self._exec_res[output_port_number] = f(*params)
 
+    def clear(self):
+        # if not self.descriptor.__dict__.get('is_saving_data_between_iterations', False):
+        #     self._buffer = [None] * len(getattr(self.descriptor, 'input_ports', []))
+        #     self._exec_res = [None] * len(getattr(self.descriptor, 'output_ports', [None]))
+        self._buffer = [None] * len(getattr(self.descriptor, 'input_ports', []))
+        self._exec_res = [None] * len(getattr(self.descriptor, 'output_ports', [None]))
+
+    def is_storage_module(self):
+        return self.descriptor.__dict__.get("is_saving_data_between_iterations", False)
+
 
 class FlowGraph:
     # flowgraph это граф, вершины которого это реальные модули (а не виджеты)
@@ -149,15 +159,18 @@ class FlowGraph:
             successors.append(dst_module)
         return successors
 
+    def clear(self):
+        for module in self.modules:
+            module.clear()
+
     def run(self):
-        print("---MODELLING START---")
+        print("---MODELLING ITERATION STARTS---")
         source_modules = [module for module in self.modules if self.is_source_module(module)]
 
         work_list = [*source_modules]
         while work_list:
             module = work_list[0]
 
-            # todo join модули, у которых есть незаполненные input_ports
             if module.has_enough_data():
                 module.execute()
                 self.send_module_data_to_successors(module)
@@ -172,6 +185,13 @@ class FlowGraph:
 
             del (work_list[0])
 
-        sink_modules = [module for module in self.modules if self.is_sink_module(module)]
-        for m in sink_modules:
-            print(f'module_id={m.get_id}, res={m.get_execution_results}')
+        # sink_modules = [module for module in self.modules if self.is_sink_module(module)]
+        # for m in sink_modules:
+        #     print(f'module_id={m.get_id}, res={m.get_execution_results}')
+        self.clear()
+
+    def execute_storage_modules(self):
+        print("---ALL MODELLING ITERATIONS DONE---")
+        storage_modules = [module for module in self.modules if module.is_storage_module()]
+        for module in storage_modules:
+            module.descriptor.data_processor()

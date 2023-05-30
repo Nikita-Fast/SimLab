@@ -1,7 +1,7 @@
 from typing import List, Any
 
 import numpy as np
-import default_qam_constellations
+from modules.communication.Modulators.QAM import default_qam_constellations
 
 
 def shifting(bit_list):

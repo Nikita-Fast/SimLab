@@ -18,7 +18,7 @@ class QAMDemodulator:
     def process(self, data: np.ndarray, noise_variance=None) -> np.ndarray:
         if self.mode == 'hard':
             res = self.demodulate_hard(data)
-            print(f"demodulated: {res}")
+            # print(f"demodulated: {res}")
             return res
         elif self.mode == 'soft':
             # как посчитать дисперсию шума?

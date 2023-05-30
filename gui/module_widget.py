@@ -26,7 +26,7 @@ class ModuleWidget(QGraphicsItem):
 
         self.name_label = MarqueeLabelProxyWidget(self.module.name, self)
 
-        self.bounding_rect = QRectF(0, 0, 275, 275)
+        self.bounding_rect = QRectF(0, 0, 175, 175)
         self.body_rect = None
         self.selection_rect: QRectF = None
         # Используются для изменения размеров модуля

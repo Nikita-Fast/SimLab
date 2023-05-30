@@ -7,7 +7,7 @@ from gui.graphics_scene import GraphicsScene
 from gui.graphics_view import GraphicsView
 from gui.modules_tree import ModulesTree
 
-from code_gen.basic import run_test_code_generation2
+from code_gen.basic import run_test_code_generation2, run_modelling_code
 
 
 class MainWindow(QMainWindow):
@@ -30,7 +30,8 @@ class MainWindow(QMainWindow):
 
         self.modules_dock_widget.widget().module_double_clicked.connect(self.centralWidget().scene().add_module_widget)
         self.tool_bar.generate_code_btn_clicked.connect(self.helper)
-        self.tool_bar.model_graph_btn_clicked.connect(self.centralWidget().scene().prepare_flow_graph)
+        self.tool_bar.run_code_btn_clicked.connect(run_modelling_code)
+        # self.tool_bar.model_graph_btn_clicked.connect(self.centralWidget().scene().prepare_flow_graph)
         self.tool_bar.save_model_btn_clicked.connect(self.centralWidget().scene().save_model_to_json)
         self.tool_bar.load_model_btn_clicked.connect(self.centralWidget().scene().load_model_from_json)
 

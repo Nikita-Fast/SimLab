@@ -17,6 +17,10 @@ input_ports = [
         "label": "Символы",
         'type': List[complex]
     },
+    {
+        "label": "ebn0_db",
+        'type': int
+    },
 ]
 
 # "f" указывает с помощью какой функции вычисляется результат соответствующего выходного порта
@@ -47,6 +51,7 @@ ebn0_db = 12
 class PositiveIntValidator:
     def is_valid(self, value: int):
         return isinstance(value, int) and value > 0
+
 
 module_parameters = [
     {
