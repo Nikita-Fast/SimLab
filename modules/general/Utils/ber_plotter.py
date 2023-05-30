@@ -1,3 +1,6 @@
+import json
+import os
+
 from matplotlib import pyplot as plt
 
 name = "BER Plotter"
@@ -42,10 +45,22 @@ def plot_ber():
     plt.xlabel("Eb/N0, dB")
     plt.ylabel("BER")
     plt.plot(ebn0_db_list, ber_list, '--o', label='DEFAULT_NAME')
+
+    plt.legend()
+    # plt.show()
+    # plt.pause(2)
+    # plt.close()
+    with open(f"./modelling_output/out_{os.getpid()}.json", "w") as f:
+        data = [(ber, ebno_db) for ber, ebno_db in zip(ber_list, ebn0_db_list)]
+        json.dump({
+            f"{name}": {
+                "ber_list" : ber_list,
+                "ebn0_db_list": ebn0_db_list
+            }
+        }, f)
+
     ebn0_db_list.clear()
     ber_list.clear()
-    plt.legend()
-    plt.show()
 
 
 # функция, указанная в "data_processor" вызывается модулем хранилищем после завершения всех итераций моделирования

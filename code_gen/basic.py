@@ -1,8 +1,12 @@
 import inspect
 import itertools
+import json
 import os.path
 import sys
 from typing import Dict, Any, List
+from multiprocessing import Process, Queue, cpu_count
+
+from matplotlib import pyplot as plt
 
 from gui.module_widget import ModuleWidget
 
@@ -18,6 +22,64 @@ def run_modelling_code():
     # deimport module
     sys.modules.pop(gen.__name__)
     del gen
+
+
+def run_concurrently(threads_number: int):
+    print(cpu_count())
+    for root, dirs, files in os.walk(f"./modelling_output"):
+        for f in files:
+            try:
+                os.remove(f"{root}/{f}")
+            except Exception as e:
+                pass
+
+    if __name__ == 'code_gen.basic':
+        processes = []
+        for i in range(threads_number):
+            p = Process(target=run_modelling_code, args=())
+            processes.append(p)
+            p.start()
+
+        for p in processes:
+            p.join()
+            p.close()
+
+        results = []
+        for root, dirs, files in os.walk(f"./modelling_output"):
+            for f in files:
+                try:
+                    with open(f"{root}/{f}", 'r') as json_file:
+                        results.append(json.load(json_file))
+                except Exception as e:
+                    pass
+        # print(results)
+        ebn0_db_list = results[0]["BER Plotter"]["ebn0_db_list"]
+        results = [dct["BER Plotter"]["ber_list"] for dct in results]
+
+        plt.figure()
+        plt.yscale("log")
+        plt.grid(visible='true')
+        plt.xlabel("Eb/N0, dB")
+        plt.ylabel("BER")
+        for index, ber_list in enumerate(results):
+            plt.plot(ebn0_db_list, ber_list, '--o', label=f"{index}")
+        plt.legend()
+        plt.show()
+
+        for bers_for_fixed_ebn0 in zip(*results):
+            assert len(bers_for_fixed_ebn0) == threads_number
+
+        ber_list = [sum(bers_for_fixed_ebn0) / threads_number for bers_for_fixed_ebn0 in zip(*results)]
+        print(ber_list, ebn0_db_list)
+        plt.figure()
+        plt.yscale("log")
+        plt.grid(visible='true')
+        plt.xlabel("Eb/N0, dB")
+        plt.ylabel("BER")
+        plt.plot(ebn0_db_list, ber_list, '--o', label='DEFAULT_NAME')
+
+        plt.legend()
+        plt.show()
 
 
 class BasicGenerator:
