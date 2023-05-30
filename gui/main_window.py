@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
         self.show()
 
     def code_runner_helper(self):
-        threads_number = 8
+        threads_number = self.menuBar().threads_number
         run_concurrently(threads_number)
 
     def helper(self):

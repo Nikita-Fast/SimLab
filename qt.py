@@ -6,7 +6,7 @@ from PySide2.QtWidgets import (QApplication, QTextEdit, QTreeWidgetItem, QWidget
                                QMenuBar, QStatusBar, QGraphicsScene, QGraphicsRectItem, QGraphicsItem,
                                QGraphicsItemGroup, QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent,
                                QStyleOptionGraphicsItem, QGraphicsSimpleTextItem, QGraphicsLineItem, QGraphicsProxyWidget,
-                               QGraphicsPathItem, QTabWidget, QFormLayout, QTextBrowser, QAction)
+                               QGraphicsPathItem, QTabWidget, QFormLayout, QTextBrowser, QAction, QWidgetAction)
 
 from PySide2.QtGui import (QTextCursor, QIcon, QContextMenuEvent, QCursor, QColor, QTextCharFormat, QFont, QBrush,
                            QPixmap, QPen, QPainter, QMouseEvent, QKeyEvent, QFocusEvent, QPainterPath, QPolygonF,
