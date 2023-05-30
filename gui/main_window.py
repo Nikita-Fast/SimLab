@@ -40,7 +40,9 @@ class MainWindow(QMainWindow):
 
     def code_runner_helper(self):
         threads_number = self.menuBar().threads_number
-        run_concurrently(threads_number)
+        min_ebn0_db = self.menuBar().min_ebn0_db
+        max_ebn0_db = self.menuBar().max_ebn0_db
+        run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
 
     def helper(self):
         module_widget_list, _ = self.centralWidget().scene().prepare_flow_graph()

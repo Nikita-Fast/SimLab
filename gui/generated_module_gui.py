@@ -49,6 +49,13 @@ class GeneratedModuleGUI(QWidget):
                 label = input_port_info["label"]
                 lines.append(f"Input port {label}({i}) is not connected!")
 
+        # Не подключенные выходы
+        for output_port_info in self.output_ports_info:
+            if not output_port_info["is_connected"]:
+                i = output_port_info["number"]
+                label = output_port_info["label"]
+                lines.append(f"Output port {label}({i}) is not connected!")
+
         # invalid connections for input ports
         for input_port_info in self.input_ports_info:
             if (connection := input_port_info.get("connection")) is not None:

@@ -381,8 +381,8 @@ class ModuleWidget(QGraphicsItem):
         return True
 
     def are_all_ports_connected(self):
-        # return self.are_all_input_ports_connected() and self.are_all_output_ports_connected()
-        return self.are_all_input_ports_connected()
+        return self.are_all_input_ports_connected() and self.are_all_output_ports_connected()
+        # return self.are_all_input_ports_connected()
 
     def load_gui(self):
         # Если в дескрипторе указан готовый gui, то загужаем его

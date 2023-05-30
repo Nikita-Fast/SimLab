@@ -24,7 +24,7 @@ def run_modelling_code():
     del gen
 
 
-def run_concurrently(threads_number: int):
+def run_concurrently(threads_number: int, min_ebn0_db: int, max_ebn0_db: int):
     print(cpu_count())
     for root, dirs, files in os.walk(f"./modelling_output"):
         for f in files:
