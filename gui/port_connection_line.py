@@ -1,4 +1,6 @@
 import math
+import typing
+
 from gui.port_widget import PortWidget
 from qt import *
 
@@ -122,8 +124,6 @@ class PortConnectionLine(QGraphicsPathItem):
         painter.setPen(QPen(self._color, 2))
         painter.setBrush(Qt.NoBrush)
 
-        # path = self.directPath()
-        # path = self.squarePath()
         path = self.bezierPath()
 
         painter.drawPath(path)
@@ -150,13 +150,11 @@ class PortConnectionLine(QGraphicsPathItem):
     def are_ports_compatible(self):
         src_port_type = self.source_port.get_type_from_descriptor()
         dst_port_type = self.dst_port.get_type_from_descriptor()
-        return src_port_type == dst_port_type
+        return src_port_type == dst_port_type or dst_port_type == typing.Any
 
     def delete(self):
-        # удалить ссылку из портов
-        # self._source_port.disconnect()
-        # self._dst_port.disconnect()
-        self._source_port.remove_connection(self)
-        self._dst_port.remove_connection(self)
-        # удалить со сцены
+        self.dst_port.remove_connection(self)
+        self.source_port.remove_connection(self)
+
         self.scene().removeItem(self)
+

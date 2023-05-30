@@ -6,14 +6,12 @@ def calc_ber(sent_bits, received_bits):
         raise ValueError(
             f'Битов отправлено: {len(sent_bits)} != Битов получено: {len(received_bits)}'
         )
-    # print(f'{"sent:":10} {sent_bits}\n{"received:":10} {received_bits}')
     bit_errors = 0
     for i in range(len(sent_bits)):
         if sent_bits[i] != received_bits[i]:
             bit_errors += 1
 
     ber = bit_errors / len(sent_bits)
-    # print(f"BER={ber}")
     return ber
 
 

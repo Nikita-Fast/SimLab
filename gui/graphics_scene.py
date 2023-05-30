@@ -35,6 +35,7 @@ class GraphicsScene(QGraphicsScene):
         for item in self.items(mouse_press_pos):
             if isinstance(item, PortWidget):
                 other_port = item
+                print('bly')
                 if not other_port.is_connected or (
                     # Уже подключенным портом м.б лишь выходной порт(который выбирается первым)
                     self.selected_port is None and other_port.is_output_port()

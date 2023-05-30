@@ -102,12 +102,12 @@ module_parameters = [
         'name': 'bits_per_symbol',
         'type': int,
         'has_default_value': True,
-        'default_value': 2,
+        'default_value': 4,
         'validator': None
     },
     {
         'name': 'constellation',
-        # 'type': List[complex],
+        'type': List[complex],
         'has_default_value': True,
         'default_value': None,
         'validator': None

@@ -459,39 +459,49 @@ class ModuleWidget(QGraphicsItem):
         return module_params
 
     def get_module_params(self):
-        derived_params = self._derive_module_params()
-        specified_params = self.module.__dict__.get('module_parameters', [])
-
-        def get_base_dict(parameter_name: str):
-            return {
-                'name': parameter_name,
-                'type': Any,
-                'has_default_value': False,
-                'default_value': None,
-                'validator': None
-            }
-
-        combined_params = {}
-        for param_dict in [*specified_params, *derived_params]:
-            p_name = param_dict['name']
-            param_info = combined_params.get(p_name, get_base_dict(p_name))
-            if param_info['type'] == Any:
-                param_info['type'] = param_dict.get('type', Any)
-            if param_info['has_default_value'] is False:
-                param_info['has_default_value'] = param_dict.get('has_default_value', False)
-            if param_info['default_value'] is None:
-                param_info['default_value'] = param_dict.get('default_value', None)
-            if param_info['validator'] is None:
-                param_info['validator'] = param_dict.get('validator', None)
-
-            if p_name not in combined_params:
-                combined_params[p_name] = param_info
-
-        module_params = list(combined_params.values())
-        ordered_param_names = [p_info['name'] for p_info in derived_params]
-        module_params.sort(key=lambda x: ordered_param_names.index(x['name']))
-
-        return module_params
+        specified_params = list(self.module.__dict__.get('module_parameters', []))
+        for param_dict in specified_params:
+            if param_dict.get("type") is None:
+                param_dict["type"] = Any
+            if param_dict.get("has_default_value") is None:
+                param_dict["has_default_value"] = False
+            if param_dict.get("validator") is None:
+                param_dict["validator"] = None
+        return specified_params
+        # derived_params = self._derive_module_params()
+        # # derived_params = []
+        # specified_params = self.module.__dict__.get('module_parameters', [])
+        #
+        # def get_base_dict(parameter_name: str):
+        #     return {
+        #         'name': parameter_name,
+        #         'type': Any,
+        #         'has_default_value': False,
+        #         'default_value': None,
+        #         'validator': None
+        #     }
+        #
+        # combined_params = {}
+        # for param_dict in [*specified_params, *derived_params]:
+        #     p_name = param_dict['name']
+        #     param_info = combined_params.get(p_name, get_base_dict(p_name))
+        #     if param_info['type'] == Any:
+        #         param_info['type'] = param_dict.get('type', Any)
+        #     if param_info['has_default_value'] is False:
+        #         param_info['has_default_value'] = param_dict.get('has_default_value', False)
+        #     if param_info['default_value'] is None:
+        #         param_info['default_value'] = param_dict.get('default_value', None)
+        #     if param_info['validator'] is None:
+        #         param_info['validator'] = param_dict.get('validator', None)
+        #
+        #     if p_name not in combined_params:
+        #         combined_params[p_name] = param_info
+        #
+        # module_params = list(combined_params.values())
+        # ordered_param_names = [p_info['name'] for p_info in derived_params]
+        # module_params.sort(key=lambda x: ordered_param_names.index(x['name']))
+        #
+        # return module_params
 
     def get_port_widget(self, number: int, type: str = 'input'):
         if type == 'input':

@@ -14,36 +14,23 @@ class PortWidget(QGraphicsRectItem):
         self.setFlags(QGraphicsItem.ItemSendsGeometryChanges | QGraphicsItem.ItemSendsScenePositionChanges)
 
     def disconnect(self):
+        for c in self.connections:
+            c.delete()
         if self.is_connected:
-            self._connections = None
+            self._connections = []
 
     def remove_connection(self, connection):
         # НЕ ИСПОЛЬЗОВАТЬ ДЛЯ УДАЛЕНИЯ СОЕДИНЕНИЯ
         # raises ValueError if connection not in self._connections
         self._connections.remove(connection)
 
-    # @property
-    # def is_connected(self):
-    #     return self._connections is not None
-
     @property
     def is_connected(self):
         return len(self._connections) > 0
 
-    # @property
-    # def connection(self):
-    #     return self._connections
-
     @property
     def connections(self) -> typing.List:
         return self._connections
-
-    # @connections.setter
-    # def connections(self, value):
-    #     raise ValueError('do not use this method')
-    #     if self._connections is not None and self.is_input_port():
-    #         raise Exception(f'К входному порту {self} нельзя сделать соединение т.к. он уже соединен с кем-то')
-    #     self._connections = value
 
     def add_connection(self, connection) -> None:
         if len(self._connections) > 0 and self.is_input_port():

@@ -32,7 +32,7 @@ module_parameters = [
         'name': 'bits_num',
         'type': int,
         'has_default_value': True,
-        'default_value': 100_000,
+        'default_value': 256_000,
         'validator': lambda x: isinstance(x, int) and (0 < x < 1_000_000_000)
     }
 ]

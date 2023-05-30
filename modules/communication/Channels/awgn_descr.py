@@ -58,7 +58,7 @@ module_parameters = [
         'name': 'information_bits_per_symbol',
         'type': int,
         'has_default_value': True,
-        'default_value': 2,
-        'validator': PositiveIntValidator()
+        'default_value': 4,
+        'validator': lambda x: isinstance(x, int) and 0 < x <= 12
     }
 ]

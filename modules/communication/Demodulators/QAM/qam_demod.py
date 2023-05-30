@@ -133,6 +133,20 @@ output_ports = [
 
 module_parameters = [
     {
+        'name': 'bits_per_symbol',
+        'type': int,
+        'has_default_value': True,
+        'default_value': 4,
+        'validator': lambda x: isinstance(x, int) and x > 0
+    },
+    {
+        'name': 'constellation',
+        'type': List[complex],
+        'has_default_value': True,
+        'default_value': None,
+        'validator': lambda x: isinstance(x, list) and all(isinstance(v, complex) for v in x)
+    },
+    {
         'name': 'mode',
         'type': str,
         'has_default_value': True,
