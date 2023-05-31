@@ -15,7 +15,8 @@ class ModelExecutor(QObject):
         self.text_browser = text_browser
         self.processes = []
         self.process = None
-        self.start_process_signal.connect(self.start_process)
+        self.start_process_signal.connect(self.start_many_processes)
+        self.finished = 0
 
     def execute(self):
         self.start_process_signal.emit()
@@ -26,6 +27,15 @@ class ModelExecutor(QObject):
         self.process.finished.connect(self.process_finished)
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.start("python3", ["./code_gen/generated.py"])
+
+    def start_many_processes(self):
+        self.clear_results_folder()
+        for _ in range(self.threads_number):
+            p = QProcess()
+            p.finished.connect(self.process_finished)
+            p.readyReadStandardOutput.connect(self.handle_stdout)
+            p.start("python3", ["./code_gen/generated.py"])
+            self.processes.append(p)
 
     def clear_results_folder(self):
         for root, dirs, files in os.walk(f"./modelling_output"):
@@ -74,15 +84,18 @@ class ModelExecutor(QObject):
         plt.show()
 
     def process_finished(self):
+        self.finished += 1
         print(f"Process finished")
-        self.extract_and_plot_results()
+        if self.finished == self.threads_number:
+            self.extract_and_plot_results()
         self.process = None
 
     def handle_stdout(self):
-        data = self.process.readAllStandardOutput()
-        stdout = bytes(data).decode("utf8")
-        print(stdout)
-        self.write_message(stdout)
+        for p in self.processes:
+            data = p.readAllStandardOutput()
+            stdout = bytes(data).decode("utf8")
+            print(stdout)
+            self.write_message(stdout)
 
     def write_message(self, text: str):
         self.text_browser.append(f"\n{text}")

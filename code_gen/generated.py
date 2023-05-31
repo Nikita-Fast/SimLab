@@ -23,7 +23,7 @@ sys.stdout.write('import of qam_demod')
 
 def f():
 	sys.stdout.write('exec')
-	bin_gen.bits_num = bin_gen.bits_num // 1
+	bin_gen.bits_num = bin_gen.bits_num // 8
 	sys.stdout.write(str(bin_gen.bits_num))
 	
 	id_to_module = dict()
