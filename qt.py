@@ -13,6 +13,6 @@ from PySide2.QtGui import (QTextCursor, QIcon, QContextMenuEvent, QCursor, QColo
                            QIntValidator, QPalette)
 
 from PySide2.QtCore import (Qt, QObject, Slot, Signal, QThread, QMutex, QTime, QTimer, QFile,
-                            QIODevice, QFileInfo, QDir, QRectF, QSizeF, QPointF, QLineF, QSize)
+                            QIODevice, QFileInfo, QDir, QRectF, QSizeF, QPointF, QLineF, QSize, QProcess)
 
 from PySide2.QtUiTools import (QUiLoader)

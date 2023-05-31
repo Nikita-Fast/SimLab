@@ -1,3 +1,4 @@
+from code_gen.model_executor import ModelExecutor
 from qt import *
 
 from gui.menu_bar import MenuBar
@@ -14,6 +15,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.executor = None
         self.setWindowTitle('Simlab')
 
         self.tool_bar = ToolBar(self)
@@ -24,9 +26,15 @@ class MainWindow(QMainWindow):
 
         self.modules_dock_widget = QDockWidget(self)
         self.modules_dock_widget.setWidget(ModulesTree(self))
+        self.modules_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea)
 
         self.addDockWidget(Qt.LeftDockWidgetArea, self.modules_dock_widget)
         self.modules_dock_widget.widget().scanning()
+
+        self.output_dock_widget = QDockWidget(self)
+        self.output_dock_widget.setWidget(QTextBrowser(self))
+        self.output_dock_widget.setAllowedAreas(Qt.RightDockWidgetArea)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.output_dock_widget)
 
         self.modules_dock_widget.widget().module_double_clicked.connect(self.centralWidget().scene().add_module_widget)
         self.tool_bar.generate_code_btn_clicked.connect(self.generate_code_helper)
@@ -42,7 +50,9 @@ class MainWindow(QMainWindow):
         threads_number = self.menuBar().threads_number
         min_ebn0_db = self.menuBar().min_ebn0_db
         max_ebn0_db = self.menuBar().max_ebn0_db
-        run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
+        # run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
+        self.executor = ModelExecutor(threads_number, self.output_dock_widget.widget())
+        self.executor.execute()
 
     def generate_code_helper(self):
         module_widget_list, _ = self.centralWidget().scene().prepare_flow_graph()

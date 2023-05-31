@@ -10,7 +10,7 @@ from modules.communication.Demodulators.QAM import qam_demod
 
 
 def f():
-	bin_gen.bits_num = bin_gen.bits_num // 8
+	bin_gen.bits_num = bin_gen.bits_num // 1
 	
 	id_to_module = dict()
 	id_to_descriptor = dict()
