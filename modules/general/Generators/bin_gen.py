@@ -18,7 +18,7 @@ language = "Python"
 module_type = 'function'
 entry_point = gen_binary_data
 
-bits_num = 8
+bits_num = 64_000
 
 output_ports = [
     {

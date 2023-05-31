@@ -1,6 +1,7 @@
 import copy
 import inspect
 import json
+import sys
 from typing import Dict, List
 import networkx as nx
 
@@ -191,7 +192,7 @@ class FlowGraph:
         self.clear()
 
     def execute_storage_modules(self):
-        print("---ALL MODELLING ITERATIONS DONE---")
+        sys.stdout.write("---ALL MODELLING ITERATIONS DONE---")
         storage_modules = [module for module in self.modules if module.is_storage_module()]
         for module in storage_modules:
             module.descriptor.data_processor()

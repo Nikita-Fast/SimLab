@@ -1,16 +1,30 @@
+import sys
+sys.stdout.write('0')
 from code_gen.utils import ModuleWrapper, FlowGraph
-from utils.custom_exceptions import *
+sys.stdout.write('1')
+from modelling_utils.custom_exceptions import *
+sys.stdout.write('2')
+import sys
 from modules.general.Utils import ebn0_db
+sys.stdout.write('import of ebn0_db')
 from modules.general.Utils import ber_calculator
+sys.stdout.write('import of ber_calculator')
 from modules.general.Utils import ber_plotter
+sys.stdout.write('import of ber_plotter')
 from modules.general.Generators import bin_gen
+sys.stdout.write('import of bin_gen')
 from modules.communication.Modulators.QAM import qam_mod
+sys.stdout.write('import of qam_mod')
 from modules.communication.Channels import awgn_descr
+sys.stdout.write('import of awgn_descr')
 from modules.communication.Demodulators.QAM import qam_demod
+sys.stdout.write('import of qam_demod')
 
 
 def f():
+	sys.stdout.write('exec')
 	bin_gen.bits_num = bin_gen.bits_num // 1
+	sys.stdout.write(str(bin_gen.bits_num))
 	
 	id_to_module = dict()
 	id_to_descriptor = dict()
@@ -48,5 +62,6 @@ def f():
 			flow_graph.run()
 		except SourceModuleRunOutOfDataException as e:
 			flow_graph.execute_storage_modules()
-			print('<><><>MODELLING DONE<><><>')
 			break
+
+f()

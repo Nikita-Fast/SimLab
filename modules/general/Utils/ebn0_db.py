@@ -1,6 +1,6 @@
 from typing import List
 
-from utils.custom_exceptions import SourceModuleRunOutOfDataException
+from modelling_utils.custom_exceptions import SourceModuleRunOutOfDataException
 
 
 class EbN0dbModule:

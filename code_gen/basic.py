@@ -89,12 +89,20 @@ class BasicGenerator:
         modules = module_widgets
         # import
         import_lines = [
+            f"import sys",
+            f"sys.stdout.write('0')",
             f"from code_gen.utils import ModuleWrapper, FlowGraph",
-            f"from utils.custom_exceptions import *"
+            f"sys.stdout.write('1')",
+            f"from modelling_utils.custom_exceptions import *",
+            f"sys.stdout.write('2')",f"import sys"
         ]
         import_lines += self.gen_descriptors_import([m.module for m in modules])
 
-        code_lines = [f"bin_gen.bits_num = bin_gen.bits_num // {threads_number}", ""]
+        code_lines = [
+            f"bin_gen.bits_num = bin_gen.bits_num // {threads_number}",
+            "sys.stdout.write(str(bin_gen.bits_num))",
+            ""
+        ]
         # create dicts
         code_lines.append(f'id_to_module = dict()')
         code_lines.append(f'id_to_descriptor = dict()')
@@ -113,11 +121,13 @@ class BasicGenerator:
         # оборачиваем код моделирования вызовом функции
         code_lines = self.gen_function('f', code_lines)
 
+        code_lines += ["", "f()"]
+
         with open(self.OUTPUT_FILE_NAME, 'w') as f:
             f.write('\n'.join(itertools.chain(import_lines, code_lines)))
 
     def gen_function(self, func_name: str, body: List[str]):
-        return ["", "", f"def {func_name}():", *[f"\t{line}" for line in body]]
+        return ["", "", f"def {func_name}():", f"\tsys.stdout.write('exec')",*[f"\t{line}" for line in body]]
 
     def gen_module_wrapper_creation(self):
         return [
@@ -145,7 +155,7 @@ class BasicGenerator:
             "\t\tflow_graph.run()",
             "\texcept SourceModuleRunOutOfDataException as e:",
             "\t\tflow_graph.execute_storage_modules()",
-            "\t\tprint('<><><>MODELLING DONE<><><>')",
+            # "\t\tsys.stdout.write('<><><>MODELLING DONE<><><>')",
             "\t\tbreak",
         ]
 
@@ -159,6 +169,8 @@ class BasicGenerator:
             import_name = os.path.splitext(d.__file__)[0].split('/')[-1]
             line = f'from {import_path} import {import_name}'
             lines.append(line)
+
+            lines.append(f"sys.stdout.write('import of {import_name}')")
         return lines
 
     def gen_module_init(
