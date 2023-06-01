@@ -1,4 +1,5 @@
 import json
+import re
 import time
 
 from matplotlib import pyplot as plt
@@ -9,6 +10,7 @@ import os
 
 class ModelExecutor(QObject):
     start_process_signal = Signal()
+    process_completes_iteration = Signal(int)
 
     def __init__(self, threads_number: int, text_browser: QTextBrowser):
         super().__init__()
@@ -19,6 +21,9 @@ class ModelExecutor(QObject):
         self.process = None
         self.start_process_signal.connect(self.start_many_processes)
         self.finished = 0
+        self.progress_re = re.compile("Process [0-9]+ completes iteration in [0-9]+.[0-9]+s")
+        self.performed_iters = 0
+        self.total_iterations = 12 * threads_number
 
     def execute(self):
         self.start_process_signal.emit()
@@ -50,7 +55,7 @@ class ModelExecutor(QObject):
                         results.append(json.load(json_file))
                 except Exception as e:
                     pass
-        print("results:", results)
+        # print("results:", results)
         ebn0_db_list = results[0]["BER Plotter"]["ebn0_db_list"]
         results = [dct["BER Plotter"]["ber_list"] for dct in results]
 
@@ -92,8 +97,18 @@ class ModelExecutor(QObject):
         for p in self.processes:
             data = p.readAllStandardOutput()
             stdout = bytes(data).decode("utf8")
-            print(stdout)
+
+            self.simple_percent_parser(stdout)
+
             self.write_message(stdout)
+
+    def simple_percent_parser(self, output: str):
+        print(output)
+        m = self.progress_re.search(output)
+        if m:
+            self.performed_iters += 1
+            print(f"progress={self.performed_iters}/{self.total_iterations}")
+            self.process_completes_iteration.emit(self.performed_iters)
 
     def write_message(self, text: str):
         self.text_browser.append(text)

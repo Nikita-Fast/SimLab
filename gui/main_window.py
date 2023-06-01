@@ -3,6 +3,7 @@ import pickle
 
 from code_gen.model_executor import ModelExecutor
 from gui.module_widget import ModuleWidget
+from gui.progress_bar import ProgressBar
 from qt import *
 
 from gui.menu_bar import MenuBar
@@ -28,6 +29,9 @@ class MainWindow(QMainWindow):
         self.setMenuBar(MenuBar(self))
         self.setStatusBar(StatusBar(self))
         self.setCentralWidget(GraphicsView(GraphicsScene(self), self))
+
+        self.progress_bar = ProgressBar(self)
+        self.statusBar().addPermanentWidget(self.progress_bar, 1)
 
         self.modules_dock_widget = QDockWidget(self)
         self.modules_dock_widget.setWidget(ModulesTree(self))
@@ -56,8 +60,13 @@ class MainWindow(QMainWindow):
             threads_number = self.menuBar().threads_number
             min_ebn0_db = self.menuBar().min_ebn0_db
             max_ebn0_db = self.menuBar().max_ebn0_db
-            # run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
+
+            # ebn0_points = max_ebn0_db - min_ebn0_db + 1
+            ebn0_points = 12
+
             self.executor = ModelExecutor(threads_number, self.output_dock_widget.widget())
+            self.progress_bar.setMaximum(ebn0_points * threads_number)
+            self.executor.process_completes_iteration.connect(self.progress_bar.setValue)
             self.executor.execute()
         else:
             print('Can not run model that not setup correctly')
