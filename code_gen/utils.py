@@ -1,7 +1,10 @@
 import copy
 import inspect
 import json
+import pickle
 import sys
+import time
+import timeit
 from typing import Dict, List
 import networkx as nx
 
@@ -16,8 +19,9 @@ def get_default_args(func):
 
 
 class ModuleWrapper:
-    def __init__(self, descriptor, module_obj, id: int):
+    def __init__(self, descriptor, module_obj, id: int, threads_number: int):
         # module_obj это объект модуль создаваемый в генерируемом коде т.е. например module0_AWGNChannel
+        self.threads_number = threads_number
         self.descriptor = descriptor
         self._f = descriptor.entry_point
         self._module_obj = module_obj
@@ -27,6 +31,19 @@ class ModuleWrapper:
         self._exec_res = [None] * len(getattr(self.descriptor, 'output_ports', [None]))
         # имя вершины в connection_graph, которой соответствует этот модуль
         self._id = id
+        self._parameters = {}
+        self._load_params()
+
+    def _load_params(self):
+        with open("./code_gen/module_params.txt", 'rb') as param_file:
+            raw_data = param_file.read()
+        deserialized_params = pickle.loads(raw_data)
+        module_params = deserialized_params[self._id]
+
+        self._parameters = {
+            param_dict["name"]: param_dict["value"]
+            for param_dict in module_params
+        }
 
     def put(self, input_port_id: int, data):
         # положить данные на указанный вход
@@ -81,10 +98,15 @@ class ModuleWrapper:
                 if input_port_number < len(self._buffer):
                     f_param_name_to_value[p_name] = self._buffer[input_port_number]
 
-            # смотрим значения параметров прямо в дескрипторе
             for p_name, p_value in f_param_name_to_value.items():
                 if p_value is None:
-                    f_param_name_to_value[p_name] = self.descriptor.__dict__.get(p_name)
+                    value = self._parameters[p_name]
+
+                    if self.descriptor.name == "Binary Generator" and p_name == "bits_num":
+                        value = value // self.threads_number
+                    sys.stdout.write(F"BITS_NUM: {value}")
+
+                    f_param_name_to_value[p_name] = value
 
             # для параметров не получивших значение, смотрим указано ли значение по умолчанию
             default_args = get_default_args(f)
@@ -165,7 +187,8 @@ class FlowGraph:
             module.clear()
 
     def run(self):
-        print("---MODELLING ITERATION STARTS---")
+        t = time.time()
+        # print("---MODELLING ITERATION STARTS---")
         source_modules = [module for module in self.modules if self.is_source_module(module)]
 
         work_list = [*source_modules]
@@ -185,6 +208,7 @@ class FlowGraph:
                 work_list.append(module)
 
             del (work_list[0])
+        print(time.time() - t)
 
         # sink_modules = [module for module in self.modules if self.is_sink_module(module)]
         # for m in sink_modules:
@@ -192,7 +216,7 @@ class FlowGraph:
         self.clear()
 
     def execute_storage_modules(self):
-        sys.stdout.write("---ALL MODELLING ITERATIONS DONE---")
+        # sys.stdout.write("---ALL MODELLING ITERATIONS DONE---")
         storage_modules = [module for module in self.modules if module.is_storage_module()]
         for module in storage_modules:
             module.descriptor.data_processor()

@@ -1,14 +1,16 @@
 import os
+import sys
 from typing import List
 
 import numpy as np
+
+bits_num = 64_000
 
 
 # Это модуль-функция
 def gen_binary_data(bits_num: int = 16):
     np.random.seed(os.getpid())
     data = list(np.random.randint(low=0, high=2, size=bits_num))
-    # print(f"generated bits: {data}")
     return data
 
 
@@ -18,7 +20,7 @@ language = "Python"
 module_type = 'function'
 entry_point = gen_binary_data
 
-bits_num = 64_000
+# bits_num = 64_000
 
 output_ports = [
     {

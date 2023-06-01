@@ -54,11 +54,12 @@ class ModelExecutor(QObject):
                         results.append(json.load(json_file))
                 except Exception as e:
                     pass
-        # print(results)
+        print("results:", results)
         ebn0_db_list = results[0]["BER Plotter"]["ebn0_db_list"]
         results = [dct["BER Plotter"]["ber_list"] for dct in results]
 
         plt.figure()
+        plt.title("BER for each process")
         plt.yscale("log")
         plt.grid(visible='true')
         plt.xlabel("Eb/N0, dB")
@@ -74,6 +75,7 @@ class ModelExecutor(QObject):
         ber_list = [sum(bers_for_fixed_ebn0) / self.threads_number for bers_for_fixed_ebn0 in zip(*results)]
         print(ber_list, ebn0_db_list)
         plt.figure()
+        plt.title("Resulted BER")
         plt.yscale("log")
         plt.grid(visible='true')
         plt.xlabel("Eb/N0, dB")

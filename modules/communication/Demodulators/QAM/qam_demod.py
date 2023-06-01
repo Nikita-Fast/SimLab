@@ -1,3 +1,4 @@
+import sys
 from typing import List
 
 import numpy as np
@@ -15,7 +16,7 @@ class QAMDemodulator:
         if constellation is None:
             self.constellation = default_qam_constellations.get_qam_constellation[bits_per_symbol]
 
-    def process(self, data: np.ndarray, noise_variance=None) -> np.ndarray:
+    def process(self, data: np.ndarray) -> np.ndarray:
         if self.mode == 'hard':
             res = self.demodulate_hard(data)
             # print(f"demodulated: {res}")
@@ -23,7 +24,7 @@ class QAMDemodulator:
         elif self.mode == 'soft':
             # как посчитать дисперсию шума?
             raise Exception('not implemented')
-            return self.demodulate_soft(data, noise_variance)
+            # return self.demodulate_soft(data, noise_variance)
         else:
             raise ValueError("У демодулятора есть только два режима работы: 'hard' и 'soft'")
 

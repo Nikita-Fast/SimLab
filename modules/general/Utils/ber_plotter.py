@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 from matplotlib import pyplot as plt
 
@@ -51,7 +52,6 @@ def plot_ber():
     # plt.pause(2)
     # plt.close()
     with open(f"./modelling_output/out_{os.getpid()}.json", "w") as f:
-        data = [(ber, ebno_db) for ber, ebno_db in zip(ber_list, ebn0_db_list)]
         json.dump({
             f"{name}": {
                 "ber_list" : ber_list,

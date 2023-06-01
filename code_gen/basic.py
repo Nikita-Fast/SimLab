@@ -90,30 +90,25 @@ class BasicGenerator:
         # import
         import_lines = [
             f"import sys",
-            f"sys.stdout.write('0')",
             f"from code_gen.utils import ModuleWrapper, FlowGraph",
-            f"sys.stdout.write('1')",
             f"from modelling_utils.custom_exceptions import *",
-            f"sys.stdout.write('2')",f"import sys"
+            f"import sys"
         ]
         import_lines += self.gen_descriptors_import([m.module for m in modules])
 
-        code_lines = [
-            f"bin_gen.bits_num = bin_gen.bits_num // {threads_number}",
-            "sys.stdout.write(str(bin_gen.bits_num))",
-            ""
-        ]
         # create dicts
-        code_lines.append(f'id_to_module = dict()')
-        code_lines.append(f'id_to_descriptor = dict()')
+        code_lines = [
+            f'id_to_module = dict()',
+            f'id_to_descriptor = dict()',
+            ''
+        ]
 
         # init modules
-        code_lines.append('')
         for module_id, m in enumerate(modules):
             code_lines += self.gen_module_init(m, module_id)
 
         # utils.ModuleWrapper
-        code_lines += self.gen_module_wrapper_creation()
+        code_lines += self.gen_module_wrapper_creation(threads_number)
 
         # создать и запустить flow_graph
         code_lines += self.gen_flow_graph_creation_and_processing()
@@ -127,14 +122,14 @@ class BasicGenerator:
             f.write('\n'.join(itertools.chain(import_lines, code_lines)))
 
     def gen_function(self, func_name: str, body: List[str]):
-        return ["", "", f"def {func_name}():", f"\tsys.stdout.write('exec')",*[f"\t{line}" for line in body]]
+        return ["", "", f"def {func_name}():", *[f"\t{line}" for line in body]]
 
-    def gen_module_wrapper_creation(self):
+    def gen_module_wrapper_creation(self, threads_number: int):
         return [
             '',
             'module_wrappers = []',
             'for id, module in id_to_module.items():',
-            '\tm = ModuleWrapper(id_to_descriptor[id], module, id)',
+            f'\tm = ModuleWrapper(id_to_descriptor[id], module, id, {threads_number})',
             '\tmodule_wrappers.append(m)',
         ]
 
@@ -155,7 +150,6 @@ class BasicGenerator:
             "\t\tflow_graph.run()",
             "\texcept SourceModuleRunOutOfDataException as e:",
             "\t\tflow_graph.execute_storage_modules()",
-            # "\t\tsys.stdout.write('<><><>MODELLING DONE<><><>')",
             "\t\tbreak",
         ]
 
@@ -169,8 +163,6 @@ class BasicGenerator:
             import_name = os.path.splitext(d.__file__)[0].split('/')[-1]
             line = f'from {import_path} import {import_name}'
             lines.append(line)
-
-            lines.append(f"sys.stdout.write('import of {import_name}')")
         return lines
 
     def gen_module_init(

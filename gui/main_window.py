@@ -1,4 +1,8 @@
+import json
+import pickle
+
 from code_gen.model_executor import ModelExecutor
+from gui.module_widget import ModuleWidget
 from qt import *
 
 from gui.menu_bar import MenuBar
@@ -8,13 +12,14 @@ from gui.graphics_scene import GraphicsScene
 from gui.graphics_view import GraphicsView
 from gui.modules_tree import ModulesTree
 
-from code_gen.basic import run_test_code_generation2, run_modelling_code, run_concurrently
+from code_gen.basic import run_test_code_generation2
 
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.modules_on_model = []
         self.executor = None
         self.setWindowTitle('Simlab')
 
@@ -47,14 +52,30 @@ class MainWindow(QMainWindow):
         self.show()
 
     def code_runner_helper(self):
-        threads_number = self.menuBar().threads_number
-        min_ebn0_db = self.menuBar().min_ebn0_db
-        max_ebn0_db = self.menuBar().max_ebn0_db
-        # run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
-        self.executor = ModelExecutor(threads_number, self.output_dock_widget.widget())
-        self.executor.execute()
+        if len(self.modules_on_model) > 0 and all(m.is_setup_correctly for m in self.modules_on_model):
+            threads_number = self.menuBar().threads_number
+            min_ebn0_db = self.menuBar().min_ebn0_db
+            max_ebn0_db = self.menuBar().max_ebn0_db
+            # run_concurrently(threads_number, min_ebn0_db, max_ebn0_db)
+            self.executor = ModelExecutor(threads_number, self.output_dock_widget.widget())
+            self.executor.execute()
+        else:
+            print('Can not run model that not setup correctly')
 
     def generate_code_helper(self):
         module_widget_list, _ = self.centralWidget().scene().prepare_flow_graph()
-        threads_number = self.menuBar().threads_number
-        run_test_code_generation2(module_widget_list, threads_number)
+        self.modules_on_model = module_widget_list
+
+        m: ModuleWidget
+        if len(self.modules_on_model) > 0 and all(m.is_setup_correctly for m in self.modules_on_model):
+            module_id_to_module_params = {
+                i: m.extract_params_from_gui()
+                for i, m in enumerate(self.modules_on_model)
+            }
+            with open("./code_gen/module_params.txt", 'wb') as param_file:
+                pickle.dump(module_id_to_module_params, param_file)
+
+            threads_number = self.menuBar().threads_number
+            run_test_code_generation2(self.modules_on_model, threads_number)
+        else:
+            print('Can not generate code for model that not setup correctly')

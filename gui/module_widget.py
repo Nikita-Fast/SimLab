@@ -18,6 +18,7 @@ class ModuleWidget(QGraphicsItem):
 
     def __init__(self, module):
         super().__init__()
+        self._is_setup_correctly = False
         self.module = module
         self.num_inputs = len(module.input_ports) if getattr(self.module, 'input_ports', None) else 0
         self.num_outputs = len(module.output_ports) if getattr(self.module, 'output_ports', None) else 0
@@ -50,6 +51,10 @@ class ModuleWidget(QGraphicsItem):
         self.recalculate_rects()
         self.gui = self.load_gui()
         self.setup_options_menu()
+
+    @property
+    def is_setup_correctly(self):
+        return self._is_setup_correctly
 
     def setup_options_menu(self):
         self.options_menu = QMenu()
@@ -170,9 +175,12 @@ class ModuleWidget(QGraphicsItem):
         painter.drawRect(self.body_rect)
 
         if not self.is_setup_properly():
+            self._is_setup_correctly = False
             # нарисовать полупрозрачный цветной квадрат поверх модуля
             painter.fillRect(self.body_rect, QBrush(QColor(255, 112, 102, 128)))
             self.update()
+        else:
+            self._is_setup_correctly = True
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Delete:
@@ -468,40 +476,6 @@ class ModuleWidget(QGraphicsItem):
             if param_dict.get("validator") is None:
                 param_dict["validator"] = None
         return specified_params
-        # derived_params = self._derive_module_params()
-        # # derived_params = []
-        # specified_params = self.module.__dict__.get('module_parameters', [])
-        #
-        # def get_base_dict(parameter_name: str):
-        #     return {
-        #         'name': parameter_name,
-        #         'type': Any,
-        #         'has_default_value': False,
-        #         'default_value': None,
-        #         'validator': None
-        #     }
-        #
-        # combined_params = {}
-        # for param_dict in [*specified_params, *derived_params]:
-        #     p_name = param_dict['name']
-        #     param_info = combined_params.get(p_name, get_base_dict(p_name))
-        #     if param_info['type'] == Any:
-        #         param_info['type'] = param_dict.get('type', Any)
-        #     if param_info['has_default_value'] is False:
-        #         param_info['has_default_value'] = param_dict.get('has_default_value', False)
-        #     if param_info['default_value'] is None:
-        #         param_info['default_value'] = param_dict.get('default_value', None)
-        #     if param_info['validator'] is None:
-        #         param_info['validator'] = param_dict.get('validator', None)
-        #
-        #     if p_name not in combined_params:
-        #         combined_params[p_name] = param_info
-        #
-        # module_params = list(combined_params.values())
-        # ordered_param_names = [p_info['name'] for p_info in derived_params]
-        # module_params.sort(key=lambda x: ordered_param_names.index(x['name']))
-        #
-        # return module_params
 
     def get_port_widget(self, number: int, type: str = 'input'):
         if type == 'input':
@@ -551,6 +525,31 @@ class ModuleWidget(QGraphicsItem):
             else:
                 if p_name in self.module.__dict__:
                     del self.module.__dict__[p_name]
+
+    def extract_params_from_gui(self) -> List[Dict]:
+        # TODO
+        module_param_names: List[str] = self.get_param_names()
+        params = []
+        module_gui = self.gui
+        for p_name in module_param_names:
+            # Если в gui у параметра выставлено валидное значение, то сохраняем его в дескриптор
+            if (p_value := module_gui.__dict__.get(p_name, 'PARAM_NOT_SET')) != 'PARAM_NOT_SET':
+                p_dict = {
+                    "name": p_name,
+                    "value": p_value
+                }
+                params.append(p_dict)
+                # self.module.__dict__[p_name] = p_value
+            # если значение не валидное, значит параметр в данный момент не имеет значения,
+            # поэтому старое значение параметра должно быть удалено из дескриптора
+            else:
+                if p_name in self.module.__dict__:
+                    p_dict = {
+                        "name": p_name
+                    }
+                    params.append(p_dict)
+                    # del self.module.__dict__[p_name]
+        return params
 
     def are_all_params_set_up(self):
         self.module: ModuleDescriptor
