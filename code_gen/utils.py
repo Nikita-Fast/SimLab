@@ -1,6 +1,7 @@
 import copy
 import inspect
 import json
+import os
 import pickle
 import sys
 import time
@@ -104,7 +105,7 @@ class ModuleWrapper:
 
                     if self.descriptor.name == "Binary Generator" and p_name == "bits_num":
                         value = value // self.threads_number
-                    sys.stdout.write(F"BITS_NUM: {value}")
+                    # print(f"BITS_NUM: {value}")
 
                     f_param_name_to_value[p_name] = value
 
@@ -208,7 +209,7 @@ class FlowGraph:
                 work_list.append(module)
 
             del (work_list[0])
-        print(time.time() - t)
+        print(f"Process {os.getpid()} completes iteration in {time.time() - t:.3f}s")
 
         # sink_modules = [module for module in self.modules if self.is_sink_module(module)]
         # for m in sink_modules:

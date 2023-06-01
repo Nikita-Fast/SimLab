@@ -92,7 +92,7 @@ class BasicGenerator:
             f"import sys",
             f"from code_gen.utils import ModuleWrapper, FlowGraph",
             f"from modelling_utils.custom_exceptions import *",
-            f"import sys"
+            f"from qt import QObject"
         ]
         import_lines += self.gen_descriptors_import([m.module for m in modules])
 
@@ -114,15 +114,27 @@ class BasicGenerator:
         code_lines += self.gen_flow_graph_creation_and_processing()
 
         # оборачиваем код моделирования вызовом функции
-        code_lines = self.gen_function('f', code_lines)
+        code_lines = self.gen_class(f_body=self.gen_function('f', code_lines))
 
-        code_lines += ["", "f()"]
+        # code_lines += ["", "f()"]
 
         with open(self.OUTPUT_FILE_NAME, 'w') as f:
             f.write('\n'.join(itertools.chain(import_lines, code_lines)))
 
+    def gen_class(self, f_body: List[str]):
+        return [
+            "",
+            "",
+            "class Model(QObject):",
+            *[
+                f"\t{line}" for line in f_body
+            ],
+            "",
+            "Model().f()"
+        ]
+
     def gen_function(self, func_name: str, body: List[str]):
-        return ["", "", f"def {func_name}():", *[f"\t{line}" for line in body]]
+        return [f"def {func_name}(self):", *[f"\t{line}" for line in body]]
 
     def gen_module_wrapper_creation(self, threads_number: int):
         return [

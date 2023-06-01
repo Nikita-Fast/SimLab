@@ -1,4 +1,5 @@
 import json
+import time
 
 from matplotlib import pyplot as plt
 
@@ -11,6 +12,7 @@ class ModelExecutor(QObject):
 
     def __init__(self, threads_number: int, text_browser: QTextBrowser):
         super().__init__()
+        self.start_time = 0
         self.threads_number = threads_number
         self.text_browser = text_browser
         self.processes = []
@@ -21,15 +23,9 @@ class ModelExecutor(QObject):
     def execute(self):
         self.start_process_signal.emit()
 
-    def start_process(self):
-        self.clear_results_folder()
-        self.process = QProcess()
-        self.process.finished.connect(self.process_finished)
-        self.process.readyReadStandardOutput.connect(self.handle_stdout)
-        self.process.start("python3", ["./code_gen/generated.py"])
-
     def start_many_processes(self):
         self.clear_results_folder()
+        self.start_time = time.time()
         for _ in range(self.threads_number):
             p = QProcess()
             p.finished.connect(self.process_finished)
@@ -87,9 +83,9 @@ class ModelExecutor(QObject):
 
     def process_finished(self):
         self.finished += 1
-        print(f"Process finished")
         if self.finished == self.threads_number:
             self.extract_and_plot_results()
+            self.write_message(f"Total execution time {time.time() - self.start_time:.3f}s")
         self.process = None
 
     def handle_stdout(self):
@@ -100,4 +96,4 @@ class ModelExecutor(QObject):
             self.write_message(stdout)
 
     def write_message(self, text: str):
-        self.text_browser.append(f"\n{text}")
+        self.text_browser.append(text)
