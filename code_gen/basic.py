@@ -193,6 +193,7 @@ class BasicGenerator:
             obj_creation = ''
 
             # достаем параметры из gui и сохраняем их в дескрипторе
+            # TODO
             if module_gui := module.module.__dict__.get('gui'):
                 params_from_gui = module_gui.get_param_values()
                 self.save_params_from_gui_to_descriptor(params_from_gui, descriptor)
@@ -202,6 +203,7 @@ class BasicGenerator:
                 obj_creation = f'{obj_name} = {f_name}'
             if module_type == 'class':
                 module_class = getattr(descriptor, 'module_class')
+                # TODO параметры надо читать из module_params.txt, а не из дескриптора
                 constructor_invocation = self.gen_module_constructor_invocation(descriptor, module_class)
                 obj_creation = f'{obj_name} = {constructor_invocation}'
 

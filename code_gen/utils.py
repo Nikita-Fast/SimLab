@@ -54,7 +54,8 @@ class ModuleWrapper:
         # получить значение с указанного выхода
         # TODO копирование добавлено как костыль для поддержания множественного соединения из выходного порта,
         #  заменить более оптимальным способом
-        return copy.deepcopy(self._exec_res[output_port_id])
+        # return copy.deepcopy(self._exec_res[output_port_id])
+        return self._exec_res[output_port_id]
 
     def has_enough_data(self):
         # Возвращает True, если на каждый входной порт поступили данные

@@ -30,6 +30,9 @@ class PortConnectionLine(QGraphicsPathItem):
         if not self.are_ports_compatible():
             self._is_valid = False
 
+        self._source_port.parentItem().is_setup_properly()
+        self._dst_port.parentItem().is_setup_properly()
+
         # TODO Надо подумать над логированием. Возможно принтом пользоваться неправильно.
         # print(f'new connection')
 
@@ -153,8 +156,13 @@ class PortConnectionLine(QGraphicsPathItem):
         return src_port_type == dst_port_type or dst_port_type == typing.Any
 
     def delete(self):
+        src_module = self.source_port.parentItem()
+        dst_module = self.dst_port.parentItem()
+
         self.dst_port.remove_connection(self)
         self.source_port.remove_connection(self)
-
         self.scene().removeItem(self)
+
+        src_module.is_setup_properly()
+        dst_module.is_setup_properly()
 

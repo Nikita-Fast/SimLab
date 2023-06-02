@@ -59,7 +59,7 @@ class QAMModulator:
             diff = len(bits) % self.bits_per_symbol
             r = self.bits_per_symbol - diff
             # добавить r нулей в конец списка битов
-            data = np.pad(bits, (0, r), 'constant')
+            # data = np.pad(bits, (0, r), 'constant')
 
         ints = bits_to_ints(bits, self.bits_per_symbol)
         return list(self.constellation[ints])
@@ -102,7 +102,7 @@ module_parameters = [
         'name': 'bits_per_symbol',
         'type': int,
         'has_default_value': True,
-        'default_value': 4,
+        'default_value': 2,
         'validator': None
     },
     {

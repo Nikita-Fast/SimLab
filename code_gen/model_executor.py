@@ -1,7 +1,9 @@
 import json
+import math
 import re
 import time
 
+import scipy.special
 from matplotlib import pyplot as plt
 
 from qt import *
@@ -81,7 +83,21 @@ class ModelExecutor(QObject):
         plt.grid(visible='true')
         plt.xlabel("Eb/N0, dB")
         plt.ylabel("BER")
-        plt.plot(ebn0_db_list, ber_list, '--o', label='DEFAULT_NAME')
+        plt.plot(ebn0_db_list, ber_list, '--o', label='SIMULATION')
+
+        # ANALYTICAL BER
+        analytical_ber_points = []
+        for Eb_N0 in range(1, 16):
+            n = 2
+            M = 2 ** n
+            # Eb_N0 = 1
+            Eb_N0 = 10 ** (Eb_N0 / 10)
+            A = (3*n) / (2*(M-1))
+            value = math.sqrt(A * Eb_N0)
+            p_b = (2 / n) * (1 - (1/math.sqrt(M))) * scipy.special.erfc(value)
+            analytical_ber_points.append(p_b)
+
+        plt.plot(list(range(1, 16)), analytical_ber_points, '--o', label='ANALYTICAL')
 
         plt.legend()
         plt.show()

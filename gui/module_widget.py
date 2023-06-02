@@ -174,13 +174,17 @@ class ModuleWidget(QGraphicsItem):
             self.out_of_top_layer()
         painter.drawRect(self.body_rect)
 
-        if not self.is_setup_properly():
-            self._is_setup_correctly = False
-            # нарисовать полупрозрачный цветной квадрат поверх модуля
+        if not self._is_setup_correctly:
             painter.fillRect(self.body_rect, QBrush(QColor(255, 112, 102, 128)))
             self.update()
-        else:
-            self._is_setup_correctly = True
+
+        # if not self.is_setup_properly():
+        #     self._is_setup_correctly = False
+        #     # нарисовать полупрозрачный цветной квадрат поверх модуля
+        #     painter.fillRect(self.body_rect, QBrush(QColor(255, 112, 102, 128)))
+        #     self.update()
+        # else:
+        #     self._is_setup_correctly = True
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Delete:
@@ -590,4 +594,6 @@ class ModuleWidget(QGraphicsItem):
             self.are_all_connections_valid
         ]
 
-        return all(f() for f in checks)
+        self._is_setup_correctly = all(f() for f in checks)
+
+        # return all(f() for f in checks)

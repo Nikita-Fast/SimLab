@@ -66,6 +66,7 @@ class MainWindow(QMainWindow):
 
             self.executor = ModelExecutor(threads_number, self.output_dock_widget.widget())
             self.progress_bar.setMaximum(ebn0_points * threads_number)
+            self.progress_bar.setValue(0)
             self.executor.process_completes_iteration.connect(self.progress_bar.setValue)
             self.executor.execute()
         else:

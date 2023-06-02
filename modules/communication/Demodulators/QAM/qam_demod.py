@@ -137,7 +137,7 @@ module_parameters = [
         'name': 'bits_per_symbol',
         'type': int,
         'has_default_value': True,
-        'default_value': 4,
+        'default_value': 2,
         'validator': lambda x: isinstance(x, int) and x > 0
     },
     {
