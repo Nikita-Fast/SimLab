@@ -150,6 +150,7 @@ class FlowGraph:
     def __init__(self, modules: List[ModuleWrapper], *args, **kwargs):
         self.modules = modules
         self.connections = self.load_port_connections_info()
+        self.work_list = self.create_work_list()
 
     def load_port_connections_info(self):
         with open('./code_gen/connections.json') as file:
@@ -184,11 +185,21 @@ class FlowGraph:
             successors.append(dst_module)
         return successors
 
+    def get_module_predecessors(self, module: ModuleWrapper):
+        predecessors = []
+        target_module_id = module.get_id
+        for module_id, module_output_connections in self.connections.items():
+            for c in module_output_connections:
+                dst_module_id = c["dst_module_id"]
+                if dst_module_id == target_module_id:
+                    predecessors.append(self.modules[module_id])
+        return predecessors
+
     def clear(self):
         for module in self.modules:
             module.clear()
 
-    def run(self):
+    def run2(self):
         t = time.time()
         # print("---MODELLING ITERATION STARTS---")
         source_modules = [module for module in self.modules if self.is_source_module(module)]
@@ -215,6 +226,45 @@ class FlowGraph:
         # sink_modules = [module for module in self.modules if self.is_sink_module(module)]
         # for m in sink_modules:
         #     print(f'module_id={m.get_id}, res={m.get_execution_results}')
+        self.clear()
+
+    def create_work_list(self):
+        source_modules = [module for module in self.modules if self.is_source_module(module)]
+
+        level = {m: float('inf') for m in self.modules}
+        for source_m in source_modules:
+            level[source_m] = 0
+
+        processing_queue = [*source_modules]
+        while processing_queue:
+            m = processing_queue[0]
+            for succ in self.get_module_successors(m):
+                level[succ] = max(level[pred] for pred in self.get_module_predecessors(succ)) + 1
+                processing_queue.append(succ)
+            del processing_queue[0]
+
+        for module, lvl in level.items():
+            level[module] = int(lvl)
+
+        max_level = max(level.values())
+
+        work_list = [[] for _ in range(0, max_level + 1)]
+        for m in self.modules:
+            m_level = level[m]
+            work_list[m_level].append(m)
+
+        return work_list
+
+    def run(self):
+        t = time.time()
+        # print("---MODELLING ITERATION STARTS---")
+
+        for same_level_modules in self.work_list:
+            for module in same_level_modules:
+                module.execute()
+                self.send_module_data_to_successors(module)
+
+        print(f"Process {os.getpid()} completes iteration in {time.time() - t:.3f}s")
         self.clear()
 
     def execute_storage_modules(self):
